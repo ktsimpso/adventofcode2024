@@ -11,7 +11,7 @@ use crate::libs::{
 use anyhow::Result;
 use clap::Command as ClapCommand;
 use days::day01;
-use std::cell::LazyCell;
+use std::sync::LazyLock;
 
 #[cfg(feature = "telemetry")]
 use libs::telemetry::Telemetry;
@@ -22,7 +22,7 @@ fn main() -> Result<()> {
     #[cfg(feature = "telemetry")]
     let _telemetry = Telemetry::init_telemetry();
 
-    let commands: Vec<(&str, LazyCell<Box<dyn Command>>)> = vec![day01::DAY_01]
+    let commands: Vec<(&str, &LazyLock<Box<dyn Command + Send + Sync>>)> = vec![&day01::DAY_01]
         .into_iter()
         .map(|command| (command.get_name(), command))
         .collect();
@@ -46,7 +46,7 @@ fn main() -> Result<()> {
     let all_days_command =
         ClapCommand::new("all_days").about("Runs all days in a row and gets the total time.");
 
-    let matches = ClapCommand::new("Advent of Code 2023")
+    let matches = ClapCommand::new("Advent of Code 2024")
         .version(VERSION)
         .about("Run the advent of code problems from this main program")
         .arg_required_else_help(true)

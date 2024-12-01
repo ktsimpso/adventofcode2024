@@ -1,16 +1,16 @@
 use crate::libs::{
-    cli::{CliProblem, Command},
+    cli::{new_cli_problem, Command},
     math::absolute_difference,
     parse::{parse_lines, parse_usize, StringParse},
     problem::Problem,
 };
 use chumsky::{error::Rich, extra, prelude::just, Parser};
 use clap::{Args, ValueEnum};
-use std::{cell::LazyCell, collections::HashMap};
+use std::{collections::HashMap, sync::LazyLock};
 
-pub const DAY_01: LazyCell<Box<dyn Command>> = LazyCell::new(|| {
+pub static DAY_01: LazyLock<Box<dyn Command + Send + Sync>> = LazyLock::new(|| {
     Box::new(
-        CliProblem::<Input, CommandLineArguments, Day01>::new(
+        new_cli_problem::<Input, CommandLineArguments, Day01>(
             "day01",
             "Interprets different lists of ids",
             "newline delimited lists of numbers with 2 numbers per line one for each list.",
@@ -26,7 +26,8 @@ pub const DAY_01: LazyCell<Box<dyn Command>> = LazyCell::new(|| {
             CommandLineArguments {
                 interpretation: ListInterpretation::Similarity,
             },
-        ),
+        )
+        .freeze(),
     )
 });
 

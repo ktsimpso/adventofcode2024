@@ -50,12 +50,16 @@ pub trait Command {
     fn get_subcommand(&self) -> ClapCommand;
 }
 
+pub struct Thaw {}
+
+pub struct Freeze {}
+
 pub struct Part<T> {
     help: &'static str,
     arg: T,
 }
 
-pub struct CliProblem<I, A, P>
+pub struct CliProblem<I, A, P, S>
 where
     I: StringParse,
     A: CliArgs,
@@ -65,30 +69,59 @@ where
     help: &'static str,
     file_help: &'static str,
     parts: Vec<Part<A>>,
+    _state: S,
     _marker: PhantomData<(I, P)>,
 }
 
-impl<I, A, P> CliProblem<I, A, P>
+pub fn new_cli_problem<I, A, P>(
+    name: &'static str,
+    help: &'static str,
+    file_help: &'static str,
+) -> CliProblem<I, A, P, Thaw>
 where
     I: StringParse,
     A: CliArgs,
     P: Problem<I, A>,
 {
-    pub fn new(name: &'static str, help: &'static str, file_help: &'static str) -> Self {
-        CliProblem {
-            name,
-            help,
-            file_help,
-            parts: Vec::new(),
-            _marker: PhantomData,
-        }
+    CliProblem {
+        name,
+        help,
+        file_help,
+        parts: Vec::new(),
+        _state: Thaw {},
+        _marker: PhantomData,
     }
+}
 
+impl<I, A, P> CliProblem<I, A, P, Thaw>
+where
+    I: StringParse,
+    A: CliArgs,
+    P: Problem<I, A>,
+{
     pub fn with_part(mut self, help: &'static str, arg: A) -> Self {
         self.parts.push(Part { help, arg });
         self
     }
 
+    pub fn freeze(self) -> CliProblem<I, A, P, Freeze> {
+        CliProblem {
+            name: self.name,
+            help: self.help,
+            file_help: self.file_help,
+            parts: self.parts,
+            _state: Freeze {},
+            _marker: PhantomData,
+        }
+    }
+}
+
+impl<I, A, P> CliProblem<I, A, P, Freeze>
+where
+    I: StringParse,
+    A: CliArgs,
+    P: Problem<I, A>,
+{
     fn run_with_file_and_args(
         &self,
         file: &PathBuf,
@@ -112,9 +145,18 @@ where
     }
 }
 
+// Frozen problems have no mutable methods so they can be static
+unsafe impl<I, A, P> Send for CliProblem<I, A, P, Freeze>
+where
+    I: StringParse,
+    A: CliArgs,
+    P: Problem<I, A>,
+{
+}
+
 pub static PART_NAMES: [&str; 2] = ["part1", "part2"];
 
-impl<I, A, P> Command for CliProblem<I, A, P>
+impl<I, A, P> Command for CliProblem<I, A, P, Freeze>
 where
     I: StringParse,
     A: CliArgs,
