@@ -1,0 +1,44 @@
+[package]
+name = "adventofcode2024"
+version = "0.1.0"
+edition = "2021"
+
+[profile.release]
+incremental = true
+
+[profile.release-fast]
+codegen-units = 1
+inherits = "release"
+incremental = false
+lto = true
+panic = "abort"
+
+[features]
+default = ["telemetry"]
+telemetry = ["minitrace"]
+memory-analysis = ["dhat", "size", "telemetry"]
+
+[dependencies]
+ahash = "0.8.11"
+anyhow = "1.0.93"
+ariadne = "0.3.0"
+chrono = "0.4.38"
+chumsky = "1.0.0-alpha.7"
+clap = { version = "4.5.21", features = ["derive", "string", "env"] }
+cookie_store = "0.21.1"
+dashu = "0.4.2"
+dhat = { version = "0.3.3", optional = true }
+dialoguer = "0.11.0"
+either = "1.13.0"
+integer-sqrt = "0.1.5"
+itertools = "0.13.0"
+minitrace = { version = "0.6.7", features = ["enable"], optional = true }
+ndarray = "0.16.1"
+num-integer = "0.1.46"
+priority-queue = "2.1.1"
+rayon = "1.10.0"
+scraper = "0.21.0"
+size = { version = "0.4.1", optional = true }
+tap = "1.0.1"
+ureq = { version = "2.11.0", features = ["cookies"] }
+url = "2.5.4"
