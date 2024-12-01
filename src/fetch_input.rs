@@ -107,7 +107,7 @@ fn fetch_and_save_input_file(agent: &Agent, url: &Url, day: usize, force: bool) 
 
     println!("Downloading the input file");
     let result = agent
-        .get(&format!("{}2023/day/{}/input", url.as_str(), day))
+        .get(&format!("{}2024/day/{}/input", url.as_str(), day))
         .call()?
         .into_string()?;
 
@@ -131,7 +131,7 @@ fn fetch_and_save_samples(agent: &Agent, url: &Url, day: usize, force: bool) -> 
 
     println!("Downloading the page information");
     let result = agent
-        .get(&format!("{}2023/day/{}", url.as_str(), day))
+        .get(&format!("{}2024/day/{}", url.as_str(), day))
         .call()?
         .into_string()?;
 

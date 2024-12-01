@@ -1,41 +1,53 @@
 use crate::libs::{
     cli::{CliProblem, Command},
-    parse::{parse_alphanumeric, parse_lines, StringParse},
+    math::absolute_difference,
+    parse::{parse_lines, parse_usize, StringParse},
     problem::Problem,
 };
-use chumsky::{error::Rich, extra, Parser};
-use clap::Args;
-use itertools::Itertools;
-use std::cell::LazyCell;
+use chumsky::{error::Rich, extra, prelude::just, Parser};
+use clap::{Args, ValueEnum};
+use std::{cell::LazyCell, collections::HashMap};
 
 pub const DAY_01: LazyCell<Box<dyn Command>> = LazyCell::new(|| {
     Box::new(
         CliProblem::<Input, CommandLineArguments, Day01>::new(
             "day01",
-            "Finds the first numeric digit and last numeric digit and concatenates them for each line. Then sums the values of each line from the resulting number",
-            "newline delimited strings with at least 2 digits per line.",
+            "Interprets different lists of ids",
+            "newline delimited lists of numbers with 2 numbers per line one for each list.",
         )
-        .with_part("Calibration values only use literal digits on the default input", CommandLineArguments { words: false })
-        .with_part("Calibration values can use both literal, and spelt out digits on the default input", CommandLineArguments { words: true }),
+        .with_part(
+            "Computes the sum of the difference between the like indexed ordered lists",
+            CommandLineArguments {
+                interpretation: ListInterpretation::Difference,
+            },
+        )
+        .with_part(
+            "Computes a score based on the frequency the first list item occurs in the second list",
+            CommandLineArguments {
+                interpretation: ListInterpretation::Similarity,
+            },
+        ),
     )
 });
 
-struct Input(Vec<String>);
+struct Input(Vec<(usize, usize)>);
 
 impl StringParse for Input {
     fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
-        parse_lines(parse_alphanumeric().map(|s: &'a str| s.to_string())).map(Input)
+        parse_lines(parse_usize().then_ignore(just("   ")).then(parse_usize())).map(Input)
     }
+}
+
+#[derive(ValueEnum, Clone)]
+enum ListInterpretation {
+    Difference,
+    Similarity,
 }
 
 #[derive(Args)]
 struct CommandLineArguments {
-    #[arg(
-        short,
-        long,
-        help = "Include spelt digits when determining the calibration value"
-    )]
-    words: bool,
+    #[arg(short, long, help = "The interpretation of the lists")]
+    interpretation: ListInterpretation,
 }
 
 struct Day01 {}
@@ -44,65 +56,40 @@ impl Problem<Input, CommandLineArguments> for Day01 {
     type Output = usize;
 
     fn run(input: Input, arguments: &CommandLineArguments) -> Self::Output {
-        let digits = vec![
-            ("1", "1"),
-            ("2", "2"),
-            ("3", "3"),
-            ("4", "4"),
-            ("5", "5"),
-            ("6", "6"),
-            ("7", "7"),
-            ("8", "8"),
-            ("9", "9"),
-            ("0", "0"),
-        ];
+        let (mut left, mut right) = input.0.into_iter().fold(
+            (Vec::new(), Vec::new()),
+            |(mut left_list, mut right_list), (left, right)| {
+                left_list.push(left);
+                right_list.push(right);
+                (left_list, right_list)
+            },
+        );
 
-        let words = vec![
-            ("one", "1"),
-            ("two", "2"),
-            ("three", "3"),
-            ("four", "4"),
-            ("five", "5"),
-            ("six", "6"),
-            ("seven", "7"),
-            ("eight", "8"),
-            ("nine", "9"),
-            ("zero", "0"),
-        ];
-
-        let charset = if arguments.words {
-            digits.into_iter().chain(words).collect::<Vec<_>>()
-        } else {
-            digits
-        };
-
-        input
-            .0
-            .iter()
-            .map(|word| {
-                let first = charset
-                    .iter()
-                    .filter_map(|(pattern, value)| {
-                        word.find(pattern).map(|index| (index, value.to_string()))
-                    })
-                    .sorted_by(|(index1, _), (index2, _)| index1.cmp(index2))
-                    .map(|(_, value)| value)
-                    .take(1);
-                let second = charset
-                    .iter()
-                    .filter_map(|(pattern, value)| {
-                        word.rfind(pattern).map(|index| (index, value.to_string()))
-                    })
-                    .sorted_by(|(index1, _), (index2, _)| index2.cmp(index1))
-                    .map(|(_, value)| value)
-                    .take(1);
-
-                first
-                    .chain(second)
-                    .join("")
-                    .parse::<usize>()
-                    .expect("Valid integer")
-            })
-            .sum()
+        match arguments.interpretation {
+            ListInterpretation::Difference => {
+                left.sort();
+                right.sort();
+                compare_relative_values(left, right)
+            }
+            ListInterpretation::Similarity => similarity_score(left, right),
+        }
     }
+}
+
+fn compare_relative_values(left: Vec<usize>, right: Vec<usize>) -> usize {
+    left.into_iter()
+        .zip(right)
+        .map(|(left, right)| absolute_difference(left, right))
+        .sum()
+}
+
+fn similarity_score(left: Vec<usize>, right: Vec<usize>) -> usize {
+    let right = right.into_iter().fold(HashMap::new(), |mut acc, number| {
+        *acc.entry(number).or_insert(0) += 1;
+        acc
+    });
+
+    left.into_iter()
+        .map(|number| number * right.get(&number).unwrap_or(&0))
+        .sum()
 }
