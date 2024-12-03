@@ -10,7 +10,7 @@ use crate::libs::{
 };
 use anyhow::Result;
 use clap::Command as ClapCommand;
-use days::{day01, day02};
+use days::{day01, day02, day03};
 use std::sync::LazyLock;
 
 #[cfg(feature = "telemetry")]
@@ -23,7 +23,7 @@ fn main() -> Result<()> {
     let _telemetry = Telemetry::init_telemetry();
 
     let commands: Vec<(&str, &LazyLock<Box<dyn Command + Send + Sync>>)> =
-        vec![&day01::DAY_01, &day02::DAY_02]
+        vec![&day01::DAY_01, &day02::DAY_02, &day03::DAY_03]
             .into_iter()
             .map(|command| (command.get_name(), command))
             .collect();
