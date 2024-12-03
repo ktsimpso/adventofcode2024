@@ -1,5 +1,5 @@
 use crate::libs::{
-    cli::{new_cli_problem, Command},
+    cli::{new_cli_problem, CliProblem, Freeze},
     parse::{parse_lines, parse_usize, StringParse},
     problem::Problem,
 };
@@ -8,9 +8,9 @@ use clap::Args;
 use itertools::Itertools;
 use std::{collections::HashSet, sync::LazyLock};
 
-pub static DAY_02: LazyLock<Box<dyn Command + Send + Sync>> = LazyLock::new(|| {
-    Box::new(
-        new_cli_problem::<Input, CommandLineArguments, Day02>(
+pub static DAY_02: LazyLock<CliProblem<Input, CommandLineArguments, Day02, Freeze>> =
+    LazyLock::new(|| {
+        new_cli_problem(
             "day02",
             "Determines the safety of reactor reports",
             "newline delimited lists of numbers. Within a line delimited by a space",
@@ -27,11 +27,10 @@ pub static DAY_02: LazyLock<Box<dyn Command + Send + Sync>> = LazyLock::new(|| {
                 error_correction: true,
             },
         )
-        .freeze(),
-    )
-});
+        .freeze()
+    });
 
-struct Input(Vec<Vec<usize>>);
+pub struct Input(Vec<Vec<usize>>);
 
 impl StringParse for Input {
     fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
@@ -40,12 +39,12 @@ impl StringParse for Input {
 }
 
 #[derive(Args)]
-struct CommandLineArguments {
+pub struct CommandLineArguments {
     #[arg(short, long, help = "Whether to apply error correction to the report")]
     error_correction: bool,
 }
 
-struct Day02 {}
+pub struct Day02 {}
 
 impl Problem<Input, CommandLineArguments> for Day02 {
     type Output = usize;

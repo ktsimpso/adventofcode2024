@@ -50,6 +50,16 @@ pub trait Command {
     fn get_subcommand(&self) -> ClapCommand;
 }
 
+pub trait AsCommand: Command {
+    fn as_command(&self) -> &dyn Command;
+}
+
+impl<T: Command> AsCommand for T {
+    fn as_command(&self) -> &dyn Command {
+        self
+    }
+}
+
 pub struct Thaw {}
 
 pub struct Freeze {}

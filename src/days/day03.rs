@@ -1,5 +1,5 @@
 use crate::libs::{
-    cli::{new_cli_problem, Command},
+    cli::{new_cli_problem, CliProblem, Freeze},
     parse::{parse_usize, StringParse},
     problem::Problem,
 };
@@ -12,9 +12,9 @@ use chumsky::{
 use clap::Args;
 use std::sync::LazyLock;
 
-pub static DAY_03: LazyLock<Box<dyn Command + Send + Sync>> = LazyLock::new(|| {
-    Box::new(
-        new_cli_problem::<Input, CommandLineArguments, Day03>(
+pub static DAY_03: LazyLock<CliProblem<Input, CommandLineArguments, Day03, Freeze>> = LazyLock::new(
+    || {
+        new_cli_problem(
             "day03",
             "Interprets instructions from corrupted memory",
             "String with potiential instructions inside of it",
@@ -27,11 +27,11 @@ pub static DAY_03: LazyLock<Box<dyn Command + Send + Sync>> = LazyLock::new(|| {
             "Computes the sum of all the mul instructions in the data not gaurded by a don't instruction",
             CommandLineArguments { full_instruction_set: true },
         )
-        .freeze(),
-    )
-});
+        .freeze()
+    },
+);
 
-struct Input(Vec<Instruction>);
+pub struct Input(Vec<Instruction>);
 
 impl StringParse for Input {
     fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
@@ -70,12 +70,12 @@ enum Instruction {
 }
 
 #[derive(Args)]
-struct CommandLineArguments {
+pub struct CommandLineArguments {
     #[arg(short, long, help = "Use the full instruction set or not")]
     full_instruction_set: bool,
 }
 
-struct Day03 {}
+pub struct Day03 {}
 
 impl Problem<Input, CommandLineArguments> for Day03 {
     type Output = usize;

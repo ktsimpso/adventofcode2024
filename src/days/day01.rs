@@ -1,5 +1,5 @@
 use crate::libs::{
-    cli::{new_cli_problem, Command},
+    cli::{new_cli_problem, CliProblem, Freeze},
     parse::{parse_lines, parse_usize, StringParse},
     problem::Problem,
 };
@@ -7,9 +7,9 @@ use chumsky::{error::Rich, extra, prelude::just, Parser};
 use clap::{Args, ValueEnum};
 use std::{collections::HashMap, sync::LazyLock};
 
-pub static DAY_01: LazyLock<Box<dyn Command + Send + Sync>> = LazyLock::new(|| {
-    Box::new(
-        new_cli_problem::<Input, CommandLineArguments, Day01>(
+pub static DAY_01: LazyLock<CliProblem<Input, CommandLineArguments, Day01, Freeze>> =
+    LazyLock::new(|| {
+        new_cli_problem(
             "day01",
             "Interprets different lists of ids",
             "newline delimited lists of numbers with 2 numbers per line one for each list.",
@@ -26,11 +26,10 @@ pub static DAY_01: LazyLock<Box<dyn Command + Send + Sync>> = LazyLock::new(|| {
                 interpretation: ListInterpretation::Similarity,
             },
         )
-        .freeze(),
-    )
-});
+        .freeze()
+    });
 
-struct Input(Vec<(usize, usize)>);
+pub struct Input(Vec<(usize, usize)>);
 
 impl StringParse for Input {
     fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
@@ -45,12 +44,12 @@ enum ListInterpretation {
 }
 
 #[derive(Args)]
-struct CommandLineArguments {
+pub struct CommandLineArguments {
     #[arg(short, long, help = "The interpretation of the lists")]
     interpretation: ListInterpretation,
 }
 
-struct Day01 {}
+pub struct Day01 {}
 
 impl Problem<Input, CommandLineArguments> for Day01 {
     type Output = usize;
