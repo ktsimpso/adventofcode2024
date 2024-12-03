@@ -1,6 +1,5 @@
 use crate::libs::{
     cli::{new_cli_problem, Command},
-    math::absolute_difference,
     parse::{parse_lines, parse_usize, StringParse},
     problem::Problem,
 };
@@ -80,7 +79,7 @@ impl Problem<Input, CommandLineArguments> for Day01 {
 fn compare_relative_values(left: Vec<usize>, right: Vec<usize>) -> usize {
     left.into_iter()
         .zip(right)
-        .map(|(left, right)| absolute_difference(left, right))
+        .map(|(left, right)| left.abs_diff(right))
         .sum()
 }
 

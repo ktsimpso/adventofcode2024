@@ -1,6 +1,5 @@
 use crate::libs::{
     cli::{new_cli_problem, Command},
-    math::absolute_difference,
     parse::{parse_lines, parse_usize, StringParse},
     problem::Problem,
 };
@@ -95,7 +94,7 @@ fn validate_report_with_error(report: &[usize]) -> bool {
 
     report
         .iter()
-        .map_windows(|[a, b]| absolute_difference(**a, **b) <= 3)
+        .map_windows(|[a, b]| a.abs_diff(**b) <= 3)
         .find_position(|r| !r)
         .map(|r| r.0)
         .into_iter()
@@ -118,7 +117,7 @@ fn validate_report_with_skip(report: &[usize], skip: usize) -> bool {
         && report
             .iter()
             .skip_index(skip)
-            .map_windows(|[a, b]| absolute_difference(**a, **b) <= 3)
+            .map_windows(|[a, b]| a.abs_diff(**b) <= 3)
             .all(|r| r)
 }
 
@@ -129,7 +128,7 @@ fn validate_report(report: &[usize]) -> bool {
         .all_or(|(a, b)| a > b, |(a, b)| b > a)
         && report
             .iter()
-            .map_windows(|[a, b]| absolute_difference(**a, **b) <= 3)
+            .map_windows(|[a, b]| a.abs_diff(**b) <= 3)
             .all(|r| r)
 }
 
