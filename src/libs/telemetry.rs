@@ -211,17 +211,22 @@ impl Reporter for DayReporter {
             .map(|span| (span.trace_id, span))
             .into_group_map()
             .into_values()
-            .map(|record| {
+            .filter_map(|record| {
                 let parse_time = record
                     .iter()
                     .find(|span| span.name == "parse_input")
-                    .map(|span| Duration::from_nanos(span.duration_ns))
-                    .expect("Parse exists");
+                    .map(|span| Duration::from_nanos(span.duration_ns));
                 let run_time = record
                     .iter()
                     .find(|span| span.name == "run_time")
-                    .map(|span| Duration::from_nanos(span.duration_ns))
-                    .expect("Runtime exists");
+                    .map(|span| Duration::from_nanos(span.duration_ns));
+
+                match (parse_time, run_time) {
+                    (Some(parse_time), Some(run_time)) => Some((record, parse_time, run_time)),
+                    _ => None,
+                }
+            })
+            .map(|(record, parse_time, run_time)| {
                 #[cfg(feature = "memory-analysis")]
                 {
                     let (day, run_value, total_time, memory) = record
