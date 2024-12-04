@@ -1,3 +1,5 @@
+use ndarray::Array2;
+
 pub const CARDINAL_DIRECTIONS: [PointDirection; 4] = [
     PointDirection::Down,
     PointDirection::Left,
@@ -5,7 +7,7 @@ pub const CARDINAL_DIRECTIONS: [PointDirection; 4] = [
     PointDirection::Up,
 ];
 
-const RADIAL_DIRECTIONS: [PointDirection; 8] = [
+pub const RADIAL_DIRECTIONS: [PointDirection; 8] = [
     PointDirection::Down,
     PointDirection::DownLeft,
     PointDirection::DownRight,
@@ -25,6 +27,20 @@ pub struct BoundedPoint {
 }
 
 impl BoundedPoint {
+    pub fn maxes_from_table<T>(table: &Array2<T>) -> (usize, usize) {
+        let max_x = table.dim().1 - 1;
+        let max_y = table.dim().0 - 1;
+        (max_x, max_y)
+    }
+
+    pub fn from_table_index((y, x): (usize, usize), max_x: usize, max_y: usize) -> Self {
+        BoundedPoint { x, y, max_x, max_y }
+    }
+
+    pub fn get_from_table<'a, T>(&self, table: &'a Array2<T>) -> Option<&'a T> {
+        table.get((self.y, self.x))
+    }
+
     pub fn into_iter_direction(self, point_direction: PointDirection) -> BoundedPointIntoIterator {
         BoundedPointIntoIterator {
             point: self,
