@@ -19,12 +19,14 @@ pub static DAY_01: LazyLock<CliProblem<Input, CommandLineArguments, Day01, Freez
             CommandLineArguments {
                 interpretation: ListInterpretation::Difference,
             },
+            vec![("sample.txt", 11)],
         )
         .with_part(
             "Computes a score based on the frequency the first list item occurs in the second list",
             CommandLineArguments {
                 interpretation: ListInterpretation::Similarity,
             },
+            vec![("sample.txt", 31)],
         )
         .freeze()
     });

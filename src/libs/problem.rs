@@ -1,5 +1,6 @@
 use std::fmt::{self, Display};
 
+#[derive(PartialEq, Clone)]
 pub enum ProblemResult {
     Isize(isize),
     Usize(usize),
@@ -43,7 +44,7 @@ impl From<u32> for ProblemResult {
 }
 
 pub trait Problem<I, A> {
-    type Output: Into<ProblemResult>;
+    type Output: Into<ProblemResult> + Clone;
 
     fn run(input: I, arguments: &A) -> Self::Output;
 }

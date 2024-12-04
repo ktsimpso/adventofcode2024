@@ -1,11 +1,11 @@
 use std::{marker::PhantomData, path::PathBuf};
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use clap::{
     builder::PathBufValueParser, Arg, ArgAction, ArgMatches, Args, Command as ClapCommand,
     FromArgMatches, ValueHint,
 };
-use tap::Tap;
+use tap::{Conv, Tap};
 
 use super::{
     file_system::file_to_string,
@@ -64,9 +64,10 @@ pub struct Thaw {}
 
 pub struct Freeze {}
 
-pub struct Part<T> {
+pub struct Part<T, O> {
     help: &'static str,
     arg: T,
+    samples: Vec<(&'static str, O)>,
 }
 
 pub struct CliProblem<I, A, P, S>
@@ -78,9 +79,9 @@ where
     name: &'static str,
     help: &'static str,
     file_help: &'static str,
-    parts: Vec<Part<A>>,
+    parts: Vec<Part<A, P::Output>>,
     _state: S,
-    _marker: PhantomData<(I, P)>,
+    _marker: PhantomData<I>,
 }
 
 pub fn new_cli_problem<I, A, P>(
@@ -109,8 +110,13 @@ where
     A: CliArgs,
     P: Problem<I, A>,
 {
-    pub fn with_part(mut self, help: &'static str, arg: A) -> Self {
-        self.parts.push(Part { help, arg });
+    pub fn with_part(
+        mut self,
+        help: &'static str,
+        arg: A,
+        samples: Vec<(&'static str, P::Output)>,
+    ) -> Self {
+        self.parts.push(Part { help, arg, samples });
         self
     }
 
@@ -177,7 +183,39 @@ where
             .iter()
             .enumerate()
             .map(|(i, _)| (PART_NAMES[i], i))
-            .find_map(|(name, part)| args.subcommand_matches(name).map(|_| self.run_part(part)))
+            .find_map(|(name, part)| {
+                args.subcommand_matches(name).map(|args| {
+                    if args.get_flag("sample") {
+                        let part = &self.parts[part];
+                        part.samples
+                            .iter()
+                            .map(|(file, expected_result)| {
+                                self.run_with_file_and_args(
+                                    &PathBuf::new().tap_mut(|path| {
+                                        path.push(format!("input/{}/{}", self.name, file))
+                                    }),
+                                    &part.arg,
+                                    file,
+                                )
+                                .and_then(|sample_result| {
+                                    let expected_result =
+                                        (expected_result.clone()).conv::<ProblemResult>();
+                                    if sample_result != expected_result {
+                                        Err(anyhow!(
+                                            "Sample did not match. Expected: {}, Actual: {}",
+                                            expected_result,
+                                            sample_result
+                                        ))
+                                    } else {
+                                        Ok(sample_result)
+                                    }
+                                })
+                            })
+                            .collect::<Result<Vec<_>>>()?;
+                    }
+                    self.run_part(part)
+                })
+            })
             .unwrap_or_else(|| {
                 self.run_with_file_and_args(
                     args.get_one::<PathBuf>("file").expect("File is required"),
@@ -217,7 +255,15 @@ where
                 .arg(file_arg(self.file_help))
                 .args(A::get_args()),
             |command, (count, part)| {
-                command.subcommand(ClapCommand::new(PART_NAMES[count]).about(part.help))
+                command.subcommand(
+                    ClapCommand::new(PART_NAMES[count])
+                        .arg(flag_arg(
+                            "sample",
+                            's',
+                            "Check against the smaples before the real input",
+                        ))
+                        .about(part.help),
+                )
             },
         )
     }

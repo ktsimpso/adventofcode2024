@@ -20,12 +20,14 @@ pub static DAY_02: LazyLock<CliProblem<Input, CommandLineArguments, Day02, Freez
             CommandLineArguments {
                 error_correction: false,
             },
+            vec![("sample.txt", 2)],
         )
         .with_part(
             "Computes the sum of the safe reports once error correction is applied",
             CommandLineArguments {
                 error_correction: true,
             },
+            vec![("sample.txt", 4)],
         )
         .freeze()
     });

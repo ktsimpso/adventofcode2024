@@ -22,10 +22,12 @@ pub static DAY_03: LazyLock<CliProblem<Input, CommandLineArguments, Day03, Freez
         .with_part(
             "Computes the sum of all the mul instructions in the data",
             CommandLineArguments { full_instruction_set: false },
+            vec![("sample.txt", 161)],
         )
         .with_part(
             "Computes the sum of all the mul instructions in the data not gaurded by a don't instruction",
             CommandLineArguments { full_instruction_set: true },
+            vec![("sample2.txt", 48)],
         )
         .freeze()
     },

@@ -161,7 +161,7 @@ impl DayCollector {
             .for_each(|result| {
                 #[cfg(not(feature = "memory-analysis"))]
                 println!(
-                    "{} {}, parse: {}, run: {}, total: {}",
+                    "{} {:>11}, parse: {}, run: {}, total: {}",
                     result.day,
                     result.run_value,
                     formatted_duration(&result.parse_time, 1),
@@ -170,7 +170,7 @@ impl DayCollector {
                 );
                 #[cfg(feature = "memory-analysis")]
                 println!(
-                    "{} {}, parse: {}, run: {}, total: {}, memory: {:>8}",
+                    "{} {:>11}, parse: {}, run: {}, total: {}, memory: {:>8}",
                     result.day,
                     result.run_value,
                     formatted_duration(&result.parse_time, 1),
@@ -191,7 +191,7 @@ impl DayCollector {
                 },
             );
             println!(
-                "Totals,      parse: {}, run: {}, total: {}",
+                "Totals,            parse: {}, run: {}, total: {}",
                 formatted_duration(&total_parse, 50),
                 formatted_duration(&total_run, 950),
                 formatted_duration(&total, 1000)
