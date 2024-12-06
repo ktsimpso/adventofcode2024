@@ -41,6 +41,10 @@ impl BoundedPoint {
         table.get((self.y, self.x))
     }
 
+    pub fn insert_into_table<T>(&self, value: T, table: &mut Array2<T>) {
+        *table.get_mut((self.y, self.x)).expect("position exists") = value;
+    }
+
     pub fn into_iter_direction(self, point_direction: PointDirection) -> BoundedPointIntoIterator {
         BoundedPointIntoIterator {
             point: self,

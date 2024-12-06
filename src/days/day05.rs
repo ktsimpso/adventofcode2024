@@ -1,0 +1,152 @@
+use crate::libs::{
+    cli::{new_cli_problem, CliProblem, Freeze},
+    parse::{parse_usize, StringParse},
+    problem::Problem,
+};
+use chumsky::{
+    error::Rich,
+    extra,
+    prelude::{end, just},
+    text, IterParser, Parser,
+};
+use clap::Args;
+use std::{
+    collections::{HashMap, HashSet},
+    sync::LazyLock,
+};
+
+pub static DAY_05: LazyLock<CliProblem<Input, CommandLineArguments, Day05, Freeze>> =
+    LazyLock::new(|| {
+        new_cli_problem(
+            "day05",
+            "Returns the sum of the median valid page updates",
+            "Newline delimited page rules followed by a newline delimited page update list",
+        )
+        .with_part(
+            "Computes the sum of only valid page updates",
+            CommandLineArguments { valid: true },
+            vec![("sample.txt", 143)],
+        )
+        .with_part(
+            "Computes the sum of the invalid updates once fixed",
+            CommandLineArguments { valid: false },
+            vec![("sample.txt", 123)],
+        )
+        .freeze()
+    });
+
+#[derive(Debug)]
+pub struct Input {
+    page_rules: Vec<(usize, usize)>,
+    page_updates: Vec<Vec<usize>>,
+}
+
+impl StringParse for Input {
+    fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
+        let page_rules = parse_usize()
+            .then_ignore(just("|"))
+            .then(parse_usize())
+            .separated_by(text::newline())
+            .at_least(1)
+            .collect();
+        let page_updates = parse_usize()
+            .separated_by(just(","))
+            .at_least(1)
+            .collect()
+            .separated_by(text::newline())
+            .at_least(1)
+            .collect();
+
+        page_rules
+            .then_ignore(text::newline().repeated().at_least(1))
+            .then(page_updates)
+            .then_ignore(text::newline().repeated())
+            .then_ignore(end())
+            .map(|(page_rules, page_updates)| Input {
+                page_rules,
+                page_updates,
+            })
+    }
+}
+
+#[derive(Args)]
+pub struct CommandLineArguments {
+    #[arg(short, long, help = "If the updates should be valid or not")]
+    valid: bool,
+}
+
+pub struct Day05 {}
+
+impl Problem<Input, CommandLineArguments> for Day05 {
+    type Output = usize;
+
+    fn run(input: Input, arguments: &CommandLineArguments) -> Self::Output {
+        let rule_map = build_page_rule_mapping(&input.page_rules);
+
+        if arguments.valid {
+            input
+                .page_updates
+                .into_iter()
+                .filter(|page_update| is_valid_page_update(page_update, &rule_map))
+                .map(|page_update| *page_update.get(page_update.len() / 2).unwrap_or(&0))
+                .sum()
+        } else {
+            input
+                .page_updates
+                .into_iter()
+                .filter(|page_update| !is_valid_page_update(page_update, &rule_map))
+                .map(|page_update| fix_order_of_page_update(&page_update, &rule_map))
+                .sum()
+        }
+    }
+}
+
+fn build_page_rule_mapping(page_rules: &[(usize, usize)]) -> HashMap<usize, HashSet<usize>> {
+    page_rules
+        .iter()
+        .fold(HashMap::new(), |mut acc, (before, after)| {
+            acc.entry(*after).or_default().insert(*before);
+            acc.entry(*before).or_default();
+            acc
+        })
+}
+
+fn is_valid_page_update(page_update: &[usize], rules: &HashMap<usize, HashSet<usize>>) -> bool {
+    let mut page_set: HashSet<usize> = page_update.iter().copied().collect();
+
+    page_update.iter().all(|page| {
+        page_set.remove(page);
+        rules
+            .get(page)
+            .into_iter()
+            .all(|downstream_pages| downstream_pages.intersection(&page_set).count() == 0)
+    })
+}
+
+fn fix_order_of_page_update(
+    page_update: &[usize],
+    rules: &HashMap<usize, HashSet<usize>>,
+) -> usize {
+    let mut page_set: HashSet<usize> = page_update.iter().copied().collect();
+    let target = page_set.len() / 2;
+    let mut count = 0;
+
+    loop {
+        let valid_page = *page_set
+            .iter()
+            .find(|page| {
+                rules
+                    .get(page)
+                    .into_iter()
+                    .all(|downstream_pages| downstream_pages.intersection(&page_set).count() == 0)
+            })
+            .expect("At least one");
+
+        if count == target {
+            return valid_page;
+        }
+
+        page_set.remove(&valid_page);
+        count += 1;
+    }
+}
