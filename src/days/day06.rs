@@ -11,9 +11,9 @@ use chumsky::{
     Parser,
 };
 use clap::{Args, ValueEnum};
-use ndarray::Array2;
+use ndarray::{Array2, Array3, Axis};
 use rayon::iter::{ParallelBridge, ParallelIterator};
-use std::{collections::HashSet, sync::LazyLock};
+use std::sync::LazyLock;
 
 pub static DAY_06: LazyLock<CliProblem<Input, CommandLineArguments, Day06, Freeze>> =
     LazyLock::new(|| {
@@ -88,9 +88,11 @@ impl Problem<Input, CommandLineArguments> for Day06 {
         let guard_path = run(guard_position, guard_facing, &input.0)
             .map(|visited| {
                 visited
-                    .into_iter()
-                    .map(|(point, _)| point)
-                    .collect::<HashSet<_>>()
+                    .fold_axis(Axis(2), false, |acc, value| *acc || *value)
+                    .indexed_iter()
+                    .filter(|(_, value)| **value)
+                    .map(|(index, _)| index)
+                    .collect::<Vec<_>>()
             })
             .expect("Result exists");
 
@@ -98,6 +100,7 @@ impl Problem<Input, CommandLineArguments> for Day06 {
             AvoidenceStrategy::FullPath => guard_path.len(),
             AvoidenceStrategy::Loop => guard_path
                 .into_iter()
+                .map(|index| BoundedPoint::from_table_index(index, max_x, max_y))
                 .filter(|point| *point != guard_position)
                 .par_bridge()
                 .map(|obstruction| add_obstruction(obstruction, input.0.clone()))
@@ -114,19 +117,45 @@ fn add_obstruction(position: BoundedPoint, mut lab: Array2<Lab>) -> Array2<Lab> 
     lab
 }
 
+fn direction_to_index(direction: &PointDirection) -> usize {
+    match direction {
+        PointDirection::Up => 0,
+        PointDirection::Down => 1,
+        PointDirection::Left => 2,
+        PointDirection::Right => 3,
+        _ => unreachable!(),
+    }
+}
+
 fn run(
     mut guard_position: BoundedPoint,
     mut guard_facing: PointDirection,
     lab: &Array2<Lab>,
-) -> Option<HashSet<(BoundedPoint, PointDirection)>> {
-    let mut visited = HashSet::new();
-    visited.insert((guard_position, guard_facing));
+) -> Option<Array3<bool>> {
+    let mut visited = Array3::from_elem(
+        (guard_position.max_y + 1, guard_position.max_x + 1, 4),
+        false,
+    );
+
+    *visited
+        .get_mut((
+            guard_position.y,
+            guard_position.x,
+            direction_to_index(&guard_facing),
+        ))
+        .expect("exists") = true;
 
     while let Some((direction, position)) = run_step(&guard_facing, &guard_position, lab) {
-        if visited.contains(&(position, direction)) {
+        if *visited
+            .get((position.y, position.x, direction_to_index(&direction)))
+            .unwrap_or(&false)
+        {
             return None;
         }
-        visited.insert((position, direction));
+        *visited
+            .get_mut((position.y, position.x, direction_to_index(&direction)))
+            .expect("exists") = true;
+
         guard_facing = direction;
         guard_position = position;
     }
