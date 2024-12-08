@@ -10,7 +10,7 @@ use crate::libs::{
 };
 use anyhow::Result;
 use clap::Command as ClapCommand;
-use days::{day01, day02, day03, day04, day05, day06, day07};
+use days::{day01, day02, day03, day04, day05, day06, day07, day08};
 use libs::cli::AsCommand;
 
 #[cfg(feature = "telemetry")]
@@ -30,6 +30,7 @@ fn main() -> Result<()> {
         day05::DAY_05.as_command(),
         day06::DAY_06.as_command(),
         day07::DAY_07.as_command(),
+        day08::DAY_08.as_command(),
     ]
     .into_iter()
     .map(|command| (command.get_name(), command))

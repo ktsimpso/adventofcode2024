@@ -52,6 +52,142 @@ impl BoundedPoint {
         }
     }
 
+    pub fn relative_horizontal_position_to(&self, other: &Self) -> PointDirection {
+        if self.x > other.x {
+            PointDirection::Right
+        } else {
+            PointDirection::Left
+        }
+    }
+
+    pub fn relative_vertical_position_to(&self, other: &Self) -> PointDirection {
+        if self.y > other.y {
+            PointDirection::Down
+        } else {
+            PointDirection::Up
+        }
+    }
+
+    pub fn relative_position_to(&self, other: &Self) -> (PointDirection, PointDirection) {
+        (
+            self.relative_horizontal_position_to(other),
+            self.relative_vertical_position_to(other),
+        )
+    }
+
+    pub fn jump_to(
+        &self,
+        horizontal_distance: usize,
+        horizontal_direction: PointDirection,
+        vertical_distance: usize,
+        vertical_direction: PointDirection,
+    ) -> Option<BoundedPoint> {
+        match horizontal_direction {
+            PointDirection::Left => {
+                if self.x >= horizontal_distance {
+                    Some(self.x - horizontal_distance)
+                } else {
+                    None
+                }
+            }
+            PointDirection::Right => {
+                if self.x + horizontal_distance <= self.max_x {
+                    Some(self.x + horizontal_distance)
+                } else {
+                    None
+                }
+            }
+            _ => unreachable!(),
+        }
+        .and_then(|x| match vertical_direction {
+            PointDirection::Up => {
+                if self.y >= vertical_distance {
+                    Some(BoundedPoint {
+                        x,
+                        y: self.y - vertical_distance,
+                        ..*self
+                    })
+                } else {
+                    None
+                }
+            }
+            PointDirection::Down => {
+                if self.y + vertical_distance <= self.max_y {
+                    Some(BoundedPoint {
+                        x,
+                        y: self.y + vertical_distance,
+                        ..*self
+                    })
+                } else {
+                    None
+                }
+            }
+            _ => unreachable!(),
+        })
+    }
+
+    pub fn stride_to(&self, distance: usize, direction: PointDirection) -> Option<BoundedPoint> {
+        match direction {
+            PointDirection::Up => {
+                if distance <= self.y {
+                    Some(BoundedPoint {
+                        y: self.y - distance,
+                        ..*self
+                    })
+                } else {
+                    None
+                }
+            }
+            PointDirection::Down => {
+                if self.y + distance <= self.max_y {
+                    Some(BoundedPoint {
+                        y: self.y + distance,
+                        ..*self
+                    })
+                } else {
+                    None
+                }
+            }
+            PointDirection::Left => {
+                if distance <= self.x {
+                    Some(BoundedPoint {
+                        x: self.x - distance,
+                        ..*self
+                    })
+                } else {
+                    None
+                }
+            }
+            PointDirection::Right => {
+                if self.x + distance <= self.max_x {
+                    Some(BoundedPoint {
+                        x: self.x + distance,
+                        ..*self
+                    })
+                } else {
+                    None
+                }
+            }
+            _ => todo!(),
+        }
+    }
+
+    pub fn into_iter_jumping(
+        self,
+        horizontal_length: usize,
+        horizontal_direction: PointDirection,
+        vertical_length: usize,
+        vertical_direction: PointDirection,
+    ) -> JumpingIterator {
+        JumpingIterator {
+            point: self,
+            horizontal_length,
+            horizontal_direction,
+            vertical_length,
+            vertical_direction,
+        }
+    }
+
     pub fn into_iter_cardinal_adjacent(self) -> CardinalAdjacentIterator {
         CardinalAdjacentIterator {
             point: self,
@@ -327,5 +463,31 @@ impl Iterator for RadialAdjacentIterator {
             _ => result,
         };
         result
+    }
+}
+
+pub struct JumpingIterator {
+    point: BoundedPoint,
+    horizontal_length: usize,
+    horizontal_direction: PointDirection,
+    vertical_length: usize,
+    vertical_direction: PointDirection,
+}
+
+impl Iterator for JumpingIterator {
+    type Item = BoundedPoint;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(point) = self.point.jump_to(
+            self.horizontal_length,
+            self.horizontal_direction,
+            self.vertical_length,
+            self.vertical_direction,
+        ) {
+            self.point = point;
+            Some(point)
+        } else {
+            None
+        }
     }
 }
