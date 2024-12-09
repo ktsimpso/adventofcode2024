@@ -1,6 +1,6 @@
 use crate::libs::{
     cli::{new_cli_problem, CliProblem, Freeze},
-    graph::{BoundedPoint, PointDirection},
+    graph::{BoundedPoint, CardinalDirection, Direction},
     parse::{parse_table2, StringParse},
     problem::Problem,
 };
@@ -83,7 +83,7 @@ impl Problem<Input, CommandLineArguments> for Day06 {
             .find(|(_, location)| matches!(location, Lab::Guard))
             .map(|(location, _)| BoundedPoint::from_table_index(location, max_x, max_y))
             .expect("Guard exists");
-        let guard_facing = PointDirection::Up;
+        let guard_facing = CardinalDirection::Up;
 
         let guard_path = run(guard_position, guard_facing, &input.0)
             .map(|visited| {
@@ -117,19 +117,18 @@ fn add_obstruction(position: BoundedPoint, mut lab: Array2<Lab>) -> Array2<Lab> 
     lab
 }
 
-fn direction_to_index(direction: &PointDirection) -> usize {
+fn direction_to_index(direction: &CardinalDirection) -> usize {
     match direction {
-        PointDirection::Up => 0,
-        PointDirection::Down => 1,
-        PointDirection::Left => 2,
-        PointDirection::Right => 3,
-        _ => unreachable!(),
+        CardinalDirection::Up => 0,
+        CardinalDirection::Down => 1,
+        CardinalDirection::Left => 2,
+        CardinalDirection::Right => 3,
     }
 }
 
 fn run(
     mut guard_position: BoundedPoint,
-    mut guard_facing: PointDirection,
+    mut guard_facing: CardinalDirection,
     lab: &Array2<Lab>,
 ) -> Option<Array3<bool>> {
     let mut visited = Array3::from_elem(
@@ -164,11 +163,11 @@ fn run(
 }
 
 fn run_step(
-    guard_facing: &PointDirection,
+    guard_facing: &CardinalDirection,
     guard_position: &BoundedPoint,
     lab: &Array2<Lab>,
-) -> Option<(PointDirection, BoundedPoint)> {
-    guard_position.get_adjacent(guard_facing).map(|position| {
+) -> Option<(CardinalDirection, BoundedPoint)> {
+    guard_position.get_adjacent(*guard_facing).map(|position| {
         match position.get_from_table(lab).expect("Valid position") {
             Lab::Obstruction => (guard_facing.get_clockwise(), *guard_position),
             _ => (*guard_facing, position),

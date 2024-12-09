@@ -88,7 +88,7 @@ fn is_mas_from_point(point: &BoundedPoint, search: &Array2<char>) -> bool {
     DIAGNALS.into_iter().all(|diagnal| {
         diagnal
             .into_iter()
-            .flat_map(|direction| point.get_adjacent(&direction))
+            .flat_map(|direction| point.get_adjacent(direction))
             .flat_map(|point| point.get_from_table(search))
             .fold((0, 0), |(mut m_count, mut s_count), c| {
                 if *c == 'M' {

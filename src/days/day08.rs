@@ -1,6 +1,6 @@
 use crate::libs::{
     cli::{new_cli_problem, CliProblem, Freeze},
-    graph::BoundedPoint,
+    graph::{BoundedPoint, Direction},
     parse::{parse_table2, StringParse},
     problem::Problem,
 };
@@ -47,7 +47,7 @@ impl StringParse for Input {
         let antena = any()
             .and_is(just(".").not())
             .and_is(text::newline().not())
-            .map(|c| Dish::Antena(c));
+            .map(Dish::Antena);
         parse_table2(empty.or(antena)).map(Input)
     }
 }
@@ -89,7 +89,7 @@ impl Problem<Input, CommandLineArguments> for Day08 {
             .fold(HashMap::new(), |mut acc, (index, item)| {
                 match item {
                     Dish::Antena(key) => {
-                        let items = acc.entry(key).or_insert(Vec::new());
+                        let items: &mut Vec<BoundedPoint> = acc.entry(key).or_default();
                         items.push(BoundedPoint::from_table_index(index, max_x, max_y));
                     }
                     _ => unreachable!(),
@@ -100,7 +100,7 @@ impl Problem<Input, CommandLineArguments> for Day08 {
             .values()
             .flat_map(|antenas| {
                 antenas
-                    .into_iter()
+                    .iter()
                     .tuple_combinations()
                     .flat_map(|(a, b)| (antinodes_from_points(a, b, &arguments.resonance)))
             })
