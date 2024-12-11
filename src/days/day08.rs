@@ -4,6 +4,7 @@ use crate::libs::{
     parse::{parse_table2, StringParse},
     problem::Problem,
 };
+use ahash::AHashMap;
 use chumsky::{
     error::Rich,
     extra,
@@ -13,7 +14,7 @@ use chumsky::{
 use clap::{Args, ValueEnum};
 use itertools::Itertools;
 use ndarray::Array2;
-use std::{collections::HashMap, iter::once, sync::LazyLock};
+use std::{iter::once, sync::LazyLock};
 
 pub static DAY_08: LazyLock<CliProblem<Input, CommandLineArguments, Day08, Freeze>> =
     LazyLock::new(|| {
@@ -86,7 +87,7 @@ impl Problem<Input, CommandLineArguments> for Day08 {
             .0
             .indexed_iter()
             .filter(|(_, location)| matches!(location, Dish::Antena(_)))
-            .fold(HashMap::new(), |mut acc, (index, item)| {
+            .fold(AHashMap::new(), |mut acc, (index, item)| {
                 match item {
                     Dish::Antena(key) => {
                         let items: &mut Vec<BoundedPoint> = acc.entry(key).or_default();

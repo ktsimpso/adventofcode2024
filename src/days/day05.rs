@@ -3,6 +3,7 @@ use crate::libs::{
     parse::{parse_usize, StringParse},
     problem::Problem,
 };
+use ahash::{AHashMap, AHashSet};
 use chumsky::{
     error::Rich,
     extra,
@@ -10,10 +11,7 @@ use chumsky::{
     text, IterParser, Parser,
 };
 use clap::Args;
-use std::{
-    collections::{HashMap, HashSet},
-    sync::LazyLock,
-};
+use std::sync::LazyLock;
 
 pub static DAY_05: LazyLock<CliProblem<Input, CommandLineArguments, Day05, Freeze>> =
     LazyLock::new(|| {
@@ -95,24 +93,24 @@ impl Problem<Input, CommandLineArguments> for Day05 {
                 .page_updates
                 .into_iter()
                 .filter(|page_update| !is_valid_page_update(page_update, &rule_map))
-                .map(|page_update| fix_order_of_page_update(&page_update, &rule_map))
+                .map(|page_update| find_center_of_page_update(&page_update, &rule_map))
                 .sum()
         }
     }
 }
 
-fn build_page_rule_mapping(page_rules: &[(usize, usize)]) -> HashMap<usize, HashSet<usize>> {
+fn build_page_rule_mapping(page_rules: &[(usize, usize)]) -> AHashMap<usize, AHashSet<usize>> {
     page_rules
         .iter()
-        .fold(HashMap::new(), |mut acc, (before, after)| {
+        .fold(AHashMap::new(), |mut acc, (before, after)| {
             acc.entry(*after).or_default().insert(*before);
             acc.entry(*before).or_default();
             acc
         })
 }
 
-fn is_valid_page_update(page_update: &[usize], rules: &HashMap<usize, HashSet<usize>>) -> bool {
-    let mut page_set: HashSet<usize> = page_update.iter().copied().collect();
+fn is_valid_page_update(page_update: &[usize], rules: &AHashMap<usize, AHashSet<usize>>) -> bool {
+    let mut page_set: AHashSet<usize> = page_update.iter().copied().collect();
 
     page_update.iter().all(|page| {
         page_set.remove(page);
@@ -123,30 +121,20 @@ fn is_valid_page_update(page_update: &[usize], rules: &HashMap<usize, HashSet<us
     })
 }
 
-fn fix_order_of_page_update(
+fn find_center_of_page_update(
     page_update: &[usize],
-    rules: &HashMap<usize, HashSet<usize>>,
+    rules: &AHashMap<usize, AHashSet<usize>>,
 ) -> usize {
-    let mut page_set: HashSet<usize> = page_update.iter().copied().collect();
+    let page_set: AHashSet<usize> = page_update.iter().copied().collect();
     let target = page_set.len() / 2;
-    let mut count = 0;
 
-    loop {
-        let valid_page = *page_set
-            .iter()
-            .find(|page| {
-                rules
-                    .get(page)
-                    .into_iter()
-                    .all(|downstream_pages| downstream_pages.intersection(&page_set).count() == 0)
-            })
-            .expect("At least one");
-
-        if count == target {
-            return valid_page;
-        }
-
-        page_set.remove(&valid_page);
-        count += 1;
-    }
+    *page_set
+        .iter()
+        .find(|page| {
+            rules
+                .get(page)
+                .into_iter()
+                .all(|downstream_pages| downstream_pages.intersection(&page_set).count() == target)
+        })
+        .expect("Exists")
 }

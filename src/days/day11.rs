@@ -3,6 +3,7 @@ use crate::libs::{
     parse::{parse_usize, StringParse},
     problem::Problem,
 };
+use ahash::AHashMap;
 use chumsky::{
     error::Rich,
     extra,
@@ -10,7 +11,7 @@ use chumsky::{
     text, IterParser, Parser,
 };
 use clap::Args;
-use std::{collections::HashMap, sync::LazyLock};
+use std::sync::LazyLock;
 
 pub static DAY_11: LazyLock<CliProblem<Input, CommandLineArguments, Day11, Freeze>> =
     LazyLock::new(|| {
@@ -58,7 +59,7 @@ impl Problem<Input, CommandLineArguments> for Day11 {
     type Output = usize;
 
     fn run(input: Input, arguments: &CommandLineArguments) -> Self::Output {
-        let mut stones = input.0.into_iter().fold(HashMap::new(), |mut acc, stone| {
+        let mut stones = input.0.into_iter().fold(AHashMap::new(), |mut acc, stone| {
             *acc.entry(stone).or_insert(0) += 1;
             acc
         });
@@ -78,7 +79,7 @@ impl Problem<Input, CommandLineArguments> for Day11 {
                         vec![(stone * 2024, count)]
                     }
                 })
-                .fold(HashMap::new(), |mut acc, (stone, count)| {
+                .fold(AHashMap::new(), |mut acc, (stone, count)| {
                     *acc.entry(stone).or_insert(0) += count;
                     acc
                 });

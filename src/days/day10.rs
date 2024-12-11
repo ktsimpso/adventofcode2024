@@ -4,13 +4,11 @@ use crate::libs::{
     parse::{parse_digit, parse_table2, StringParse},
     problem::Problem,
 };
-use chumsky::{container::Container, error::Rich, extra, Parser};
+use ahash::{AHashMap, AHashSet};
+use chumsky::{error::Rich, extra, Parser};
 use clap::{Args, ValueEnum};
 use ndarray::Array2;
-use std::{
-    collections::{HashMap, HashSet, VecDeque},
-    sync::LazyLock,
-};
+use std::{collections::VecDeque, sync::LazyLock};
 
 pub static DAY_10: LazyLock<CliProblem<Input, CommandLineArguments, Day10, Freeze>> =
     LazyLock::new(|| {
@@ -65,7 +63,7 @@ impl Problem<Input, CommandLineArguments> for Day10 {
         match arguments.scoring {
             ScoringSystem::UniquePeaks => find_trail_path_score(
                 &input.0,
-                |point| HashSet::from([*point]),
+                |point| AHashSet::from([*point]),
                 |point, peaks, score| {
                     let trail_endings = score.entry(*point).or_default();
                     trail_endings.extend(peaks.clone());
@@ -90,12 +88,12 @@ fn find_trail_path_score<T: Clone, F, G, H>(
 ) -> usize
 where
     F: Fn(&BoundedPoint) -> T,
-    G: FnMut(&BoundedPoint, &T, &mut HashMap<BoundedPoint, T>),
+    G: FnMut(&BoundedPoint, &T, &mut AHashMap<BoundedPoint, T>),
     H: Fn(&T) -> usize,
 {
     let (max_x, max_y) = BoundedPoint::maxes_from_table(mountain);
 
-    let mut score = HashMap::new();
+    let mut score = AHashMap::new();
     let mut queue: VecDeque<BoundedPoint> = mountain
         .indexed_iter()
         .filter(|(_, value)| **value == 9)
@@ -105,15 +103,15 @@ where
         })
         .collect();
 
-    let mut trail_heads = HashSet::new();
-    let mut visited = HashSet::new();
+    let mut trail_heads = AHashSet::new();
+    let mut visited = Array2::from_elem(mountain.dim(), false);
 
     while let Some(location) = queue.pop_front() {
-        if visited.contains(&location) {
+        if *location.get_from_table(&visited).unwrap_or(&false) {
             continue;
         }
 
-        visited.push(location);
+        location.insert_into_table(true, &mut visited);
 
         let height = location.get_from_table(mountain).expect("Valid index");
         if *height == 0 {

@@ -3,10 +3,11 @@ use crate::libs::{
     parse::{parse_lines, parse_usize, StringParse},
     problem::Problem,
 };
+use ahash::AHashSet;
 use chumsky::{error::Rich, extra, prelude::just, IterParser, Parser};
 use clap::Args;
 use itertools::Itertools;
-use std::{collections::HashSet, sync::LazyLock};
+use std::sync::LazyLock;
 
 pub static DAY_02: LazyLock<CliProblem<Input, CommandLineArguments, Day02, Freeze>> =
     LazyLock::new(|| {
@@ -70,7 +71,7 @@ impl Problem<Input, CommandLineArguments> for Day02 {
 }
 
 fn validate_report_with_error(report: &[usize]) -> bool {
-    let mut error_indices = HashSet::new();
+    let mut error_indices = AHashSet::new();
     report
         .iter()
         .map_windows(|[a, b]| a > b)

@@ -3,9 +3,10 @@ use crate::libs::{
     parse::{parse_lines, parse_usize, StringParse},
     problem::Problem,
 };
+use ahash::AHashMap;
 use chumsky::{error::Rich, extra, prelude::just, Parser};
 use clap::{Args, ValueEnum};
-use std::{collections::HashMap, sync::LazyLock};
+use std::sync::LazyLock;
 
 pub static DAY_01: LazyLock<CliProblem<Input, CommandLineArguments, Day01, Freeze>> =
     LazyLock::new(|| {
@@ -85,7 +86,7 @@ fn compare_relative_values(left: Vec<usize>, right: Vec<usize>) -> usize {
 }
 
 fn similarity_score(left: Vec<usize>, right: Vec<usize>) -> usize {
-    let right = right.into_iter().fold(HashMap::new(), |mut acc, number| {
+    let right = right.into_iter().fold(AHashMap::new(), |mut acc, number| {
         *acc.entry(number).or_insert(0) += 1;
         acc
     });
