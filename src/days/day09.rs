@@ -5,7 +5,14 @@ use crate::libs::{
 };
 use chumsky::{error::Rich, extra, prelude::end, text, IterParser, Parser};
 use clap::{Args, ValueEnum};
-use std::{iter::repeat, sync::LazyLock};
+use priority_queue::PriorityQueue;
+use std::{
+    array,
+    cmp::{min, Reverse},
+    hash::Hash,
+    iter::repeat,
+    sync::LazyLock,
+};
 
 pub static DAY_09: LazyLock<CliProblem<Input, CommandLineArguments, Day09, Freeze>> =
     LazyLock::new(|| {
@@ -84,10 +91,9 @@ impl Problem<Input, CommandLineArguments> for Day09 {
     type Output = usize;
 
     fn run(input: Input, arguments: &CommandLineArguments) -> Self::Output {
-        let mut ids_with_files: Vec<_> = input.0.into_iter().enumerate().collect();
-
         match arguments.compression_strategy {
             CompressionStrategy::HighestCompression => {
+                let ids_with_files: Vec<_> = input.0.into_iter().enumerate().collect();
                 let mut left = 0;
                 let mut right = ids_with_files.len() - 1;
                 let mut right_used = 0;
@@ -102,40 +108,32 @@ impl Problem<Input, CommandLineArguments> for Day09 {
                         file_system.append(&mut vec![left_file_id; left_disk_section.file_length]);
                     }
 
-                    if (right_disk_section.file_length - right_used)
-                        < (left_disk_section.free_length - left_space_used)
-                    {
-                        file_system.append(&mut vec![
-                            right_file_id;
-                            right_disk_section.file_length - right_used
-                        ]);
+                    let right_file_remaining = right_disk_section.file_length - right_used;
+                    let left_space_remaining = left_disk_section.free_length - left_space_used;
 
-                        left_space_used += right_disk_section.file_length - right_used;
-                        right_used = 0;
-                        right -= 1;
-                    } else if (right_disk_section.file_length - right_used)
-                        > (left_disk_section.free_length - left_space_used)
-                    {
-                        file_system.append(&mut vec![
-                            right_file_id;
-                            left_disk_section.free_length
-                                - left_space_used
-                        ]);
+                    match right_file_remaining.cmp(&left_space_remaining) {
+                        std::cmp::Ordering::Less => {
+                            file_system.append(&mut vec![right_file_id; right_file_remaining]);
 
-                        right_used += left_disk_section.free_length - left_space_used;
-                        left_space_used = 0;
-                        left += 1;
-                    } else {
-                        file_system.append(&mut vec![
-                            right_file_id;
-                            left_disk_section.free_length
-                                - left_space_used
-                        ]);
+                            left_space_used += right_file_remaining;
+                            right_used = 0;
+                            right -= 1;
+                        }
+                        std::cmp::Ordering::Greater => {
+                            file_system.append(&mut vec![right_file_id; left_space_remaining]);
 
-                        right_used = 0;
-                        left_space_used = 0;
-                        right -= 1;
-                        left += 1;
+                            right_used += left_space_remaining;
+                            left_space_used = 0;
+                            left += 1;
+                        }
+                        std::cmp::Ordering::Equal => {
+                            file_system.append(&mut vec![right_file_id; left_space_remaining]);
+
+                            right_used = 0;
+                            left_space_used = 0;
+                            right -= 1;
+                            left += 1;
+                        }
                     }
                 }
 
@@ -151,71 +149,133 @@ impl Problem<Input, CommandLineArguments> for Day09 {
                     .map(|(index, id)| index * id)
                     .sum()
             }
-            CompressionStrategy::FirstAvailableSlot => {
-                let mut right = ids_with_files.len() - 1;
-
-                loop {
-                    let (right_file_id, right_file_length, right_free_length) = {
-                        let (right_file_id, right_disk_section) = &ids_with_files[right];
-                        (
-                            *right_file_id,
-                            right_disk_section.file_length,
-                            right_disk_section.free_length,
-                        )
-                    };
-
-                    let new_position = ids_with_files
-                        .iter()
-                        .enumerate()
-                        .filter(|(index, _)| *index < right)
-                        .find(|(_, (_, section))| section.free_length >= right_file_length)
-                        .map(|(index, _)| index)
-                        .unwrap_or(right);
-
-                    if new_position == right {
-                        if right == 0 {
-                            break;
-                        }
-
-                        right -= 1;
-                    } else {
-                        let (_, adjacent_file) = ids_with_files.get_mut(right - 1).expect("exists");
-                        adjacent_file.free_length += right_file_length + right_free_length;
-
-                        let (_, previous_file) =
-                            ids_with_files.get_mut(new_position).expect("exists");
-                        let new_free = previous_file.free_length - right_file_length;
-                        previous_file.free_length = 0;
-                        let new_disk = (
-                            right_file_id,
-                            DiskSection {
-                                file_length: right_file_length,
-                                free_length: new_free,
-                            },
-                        );
-
-                        ids_with_files.remove(right);
-                        ids_with_files.insert(new_position + 1, new_disk);
-                    }
-                }
-
-                ids_with_files
-                    .into_iter()
-                    .flat_map(|(id, file)| {
-                        repeat(Data::FileData(id))
-                            .take(file.file_length)
-                            .chain(repeat(Data::Free).take(file.free_length))
-                    })
-                    .enumerate()
-                    .map(|(index, id)| {
-                        index
-                            * match id {
-                                Data::FileData(id) => id,
-                                Data::Free => 0,
-                            }
-                    })
-                    .sum()
-            }
+            CompressionStrategy::FirstAvailableSlot => compress_to_first_avilable_slot(&input.0),
         }
     }
+}
+
+#[derive(Debug)]
+struct Block {
+    block_id: usize,
+    free_early: usize,
+    allocated: Vec<(usize, usize)>,
+    free: usize,
+}
+
+impl Eq for Block {}
+
+impl PartialEq for Block {
+    fn eq(&self, other: &Self) -> bool {
+        self.block_id == other.block_id
+    }
+}
+
+impl Hash for Block {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.block_id.hash(state);
+    }
+}
+
+fn compress_to_first_avilable_slot(disk: &[DiskSection]) -> usize {
+    let mut space_queues: [PriorityQueue<Block, Reverse<usize>>; 10] =
+        array::from_fn(|_| PriorityQueue::new());
+    let ids_with_files: Vec<_> = disk.iter().enumerate().collect();
+    ids_with_files
+        .iter()
+        .map(|(id, file)| Block {
+            block_id: *id,
+            free_early: 0,
+            allocated: vec![(*id, file.file_length)],
+            free: file.free_length,
+        })
+        .for_each(|block| {
+            let block_bucket = min(block.free, 9);
+            let id = block.block_id;
+            space_queues
+                .get_mut(block_bucket)
+                .expect("Exists")
+                .push(block, Reverse(id));
+        });
+
+    let mut dummy_block = Block {
+        block_id: 0,
+        free_early: 0,
+        allocated: Vec::new(),
+        free: 0,
+    };
+
+    ids_with_files.iter().rev().for_each(|(id, file)| {
+        if let Some(bucket) = (file.file_length..=9)
+            .filter_map(|bucket| {
+                space_queues
+                    .get(bucket)
+                    .and_then(|queue| queue.peek().map(|(_, index)| (*index, bucket)))
+            })
+            .max()
+            .filter(|(index, _)| index.0 < *id)
+            .map(|(_, bucket)| bucket)
+        {
+            let (mut new_block, new_index) = space_queues
+                .get_mut(bucket)
+                .and_then(|queue| queue.pop())
+                .expect("Exists");
+
+            // Update the new Block
+            new_block.allocated.push((*id, file.file_length));
+            new_block.free -= file.file_length;
+            let block_bucket = min(new_block.free, 9);
+            space_queues
+                .get_mut(block_bucket)
+                .expect("Exists")
+                .push(new_block, new_index);
+
+            // Update the old block
+            dummy_block.block_id = *id;
+
+            space_queues
+                .iter_mut()
+                .find(|queue| queue.get_priority(&dummy_block).is_some())
+                .and_then(|queue| queue.remove(&dummy_block))
+                .into_iter()
+                .for_each(|(mut block, _)| {
+                    block.allocated.retain(|(current, _)| id != current);
+                    block.free_early += file.file_length;
+                    let block_bucket = min(block.free, 9);
+                    let block_id = block.block_id;
+                    space_queues
+                        .get_mut(block_bucket)
+                        .expect("Exists")
+                        .push(block, Reverse(block_id));
+                });
+        }
+    });
+
+    space_queues
+        .into_iter()
+        .flat_map(|queue| queue.into_iter())
+        .fold(PriorityQueue::new(), |mut acc, (block, index)| {
+            acc.push(block, index);
+            acc
+        })
+        .into_sorted_iter()
+        .flat_map(|(block, _)| {
+            repeat(Data::Free)
+                .take(block.free_early)
+                .chain(
+                    block
+                        .allocated
+                        .into_iter()
+                        .flat_map(|(id, length)| repeat(Data::FileData(id)).take(length)),
+                )
+                .chain(repeat(Data::Free).take(block.free))
+        })
+        .enumerate()
+        .map(|(index, id)| {
+            index
+                * match id {
+                    Data::FileData(id) => id,
+                    Data::Free => 0,
+                }
+        })
+        .sum()
 }
