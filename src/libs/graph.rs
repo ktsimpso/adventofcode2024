@@ -8,6 +8,13 @@ pub const CARDINAL_DIRECTIONS: [CardinalDirection; 4] = [
     CardinalDirection::Up,
 ];
 
+pub const DIAGNALS: [DiagnalDirection; 4] = [
+    DiagnalDirection::UpRight,
+    DiagnalDirection::DownRight,
+    DiagnalDirection::DownLeft,
+    DiagnalDirection::UpLeft,
+];
+
 pub const RADIAL_DIRECTIONS: [PointDirection; 8] = [
     PointDirection::Down,
     PointDirection::DownLeft,
@@ -361,16 +368,25 @@ pub trait Direction {
     fn get_counter_clockwise(&self) -> Self;
 }
 
-#[subenum(CardinalDirection, HorizontalDirection, VerticalDirection)]
+#[subenum(
+    CardinalDirection,
+    HorizontalDirection,
+    VerticalDirection,
+    DiagnalDirection
+)]
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
 pub enum PointDirection {
     #[subenum(CardinalDirection, VerticalDirection)]
     Up,
+    #[subenum(DiagnalDirection)]
     UpRight,
+    #[subenum(DiagnalDirection)]
     UpLeft,
     #[subenum(CardinalDirection, VerticalDirection)]
     Down,
+    #[subenum(DiagnalDirection)]
     DownRight,
+    #[subenum(DiagnalDirection)]
     DownLeft,
     #[subenum(CardinalDirection, HorizontalDirection)]
     Left,
@@ -488,6 +504,67 @@ impl From<VerticalDirection> for CardinalDirection {
         match value {
             VerticalDirection::Up => CardinalDirection::Up,
             VerticalDirection::Down => CardinalDirection::Down,
+        }
+    }
+}
+
+impl Direction for DiagnalDirection {
+    fn get_rotation(&self, other: &Self) -> RotationDegrees {
+        match (self, other) {
+            (p1, p2) if p1 == p2 => RotationDegrees::Zero,
+            (p1, p2) if &p1.get_opposite() == p2 => RotationDegrees::OneHundredEighty,
+            (p1, p2) if &p1.get_counter_clockwise() == p2 => RotationDegrees::TwoHundredSeventy,
+            _ => RotationDegrees::Ninety,
+        }
+    }
+
+    fn get_opposite(&self) -> Self {
+        match self {
+            DiagnalDirection::UpRight => Self::DownLeft,
+            DiagnalDirection::UpLeft => Self::DownRight,
+            DiagnalDirection::DownRight => Self::UpLeft,
+            DiagnalDirection::DownLeft => Self::UpRight,
+        }
+    }
+
+    fn get_clockwise(&self) -> Self {
+        match self {
+            DiagnalDirection::UpRight => Self::DownRight,
+            DiagnalDirection::UpLeft => Self::UpRight,
+            DiagnalDirection::DownRight => Self::DownLeft,
+            DiagnalDirection::DownLeft => Self::UpLeft,
+        }
+    }
+
+    fn get_counter_clockwise(&self) -> Self {
+        match self {
+            DiagnalDirection::UpRight => Self::UpLeft,
+            DiagnalDirection::UpLeft => Self::DownLeft,
+            DiagnalDirection::DownRight => Self::UpRight,
+            DiagnalDirection::DownLeft => Self::DownRight,
+        }
+    }
+}
+
+impl DiagnalDirection {
+    pub fn to_horizontal_and_vertical(self) -> (HorizontalDirection, VerticalDirection) {
+        match self {
+            DiagnalDirection::UpRight => (HorizontalDirection::Right, VerticalDirection::Up),
+            DiagnalDirection::UpLeft => (HorizontalDirection::Left, VerticalDirection::Up),
+            DiagnalDirection::DownRight => (HorizontalDirection::Right, VerticalDirection::Down),
+            DiagnalDirection::DownLeft => (HorizontalDirection::Left, VerticalDirection::Down),
+        }
+    }
+
+    pub fn from_horziontal_and_vertical(
+        horizatonal: &HorizontalDirection,
+        vertical: &VerticalDirection,
+    ) -> DiagnalDirection {
+        match (horizatonal, vertical) {
+            (HorizontalDirection::Left, VerticalDirection::Up) => Self::UpLeft,
+            (HorizontalDirection::Left, VerticalDirection::Down) => Self::DownLeft,
+            (HorizontalDirection::Right, VerticalDirection::Up) => Self::UpRight,
+            (HorizontalDirection::Right, VerticalDirection::Down) => Self::DownRight,
         }
     }
 }

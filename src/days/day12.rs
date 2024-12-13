@@ -1,20 +1,13 @@
 use crate::libs::{
     cli::{new_cli_problem, CliProblem, Freeze},
-    graph::{
-        BoundedPoint, CardinalDirection, HorizontalDirection, VerticalDirection,
-        CARDINAL_DIRECTIONS,
-    },
+    graph::{BoundedPoint, PointDirection, CARDINAL_DIRECTIONS},
     parse::{parse_table2, StringParse},
     problem::Problem,
 };
 use chumsky::{error::Rich, extra, prelude::one_of, Parser};
 use clap::{Args, ValueEnum};
-use itertools::Itertools;
 use ndarray::Array2;
-use std::{
-    collections::{HashMap, HashSet, VecDeque},
-    sync::LazyLock,
-};
+use std::{collections::VecDeque, sync::LazyLock};
 
 pub static DAY_12: LazyLock<CliProblem<Input, CommandLineArguments, Day12, Freeze>> =
     LazyLock::new(|| {
@@ -76,12 +69,12 @@ impl Problem<Input, CommandLineArguments> for Day12 {
 
     fn run(input: Input, arguments: &CommandLineArguments) -> Self::Output {
         let (max_x, max_y) = BoundedPoint::maxes_from_table(&input.0);
-        let mut visited = HashSet::new();
+        let mut visited = Array2::from_elem(input.0.dim(), false);
         let mut regions = Vec::new();
 
         for (index, plot) in input.0.indexed_iter() {
             let current = BoundedPoint::from_table_index(index, max_x, max_y);
-            if visited.contains(&current) {
+            if *current.get_from_table(&visited).unwrap_or(&false) {
                 continue;
             }
 
@@ -90,16 +83,16 @@ impl Problem<Input, CommandLineArguments> for Day12 {
             queue.push_back(current);
 
             while let Some(next_plot) = queue.pop_front() {
-                if visited.contains(&next_plot) {
+                if *next_plot.get_from_table(&visited).unwrap_or(&false) {
                     continue;
                 }
 
-                visited.insert(next_plot);
+                next_plot.insert_into_table(true, &mut visited);
                 region.push(next_plot);
 
                 next_plot
                     .into_iter_cardinal_adjacent()
-                    .filter(|adjacent| !visited.contains(adjacent))
+                    .filter(|adjacent| !*adjacent.get_from_table(&visited).unwrap_or(&false))
                     .filter(|adjacent| adjacent.get_from_table(&input.0).expect("Exists") == plot)
                     .for_each(|adjacent| queue.push_back(adjacent));
             }
@@ -109,7 +102,7 @@ impl Problem<Input, CommandLineArguments> for Day12 {
 
         let fence_score = match arguments.fence_score {
             FenceScore::Perimeter => count_perimeter,
-            FenceScore::Fences => count_fences,
+            FenceScore::Fences => count_corners,
         };
 
         regions
@@ -128,6 +121,72 @@ where
     area * fence_function(region, field)
 }
 
+fn count_corners(region: &[BoundedPoint], field: &Array2<char>) -> usize {
+    region
+        .iter()
+        .map(|point| {
+            let plot = point.get_from_table(field).expect("Exists");
+            let left = point
+                .get_adjacent(PointDirection::Left)
+                .and_then(|adjacent| adjacent.get_from_table(field));
+            let up = point
+                .get_adjacent(PointDirection::Up)
+                .and_then(|adjacent| adjacent.get_from_table(field));
+            let up_left = point
+                .get_adjacent(PointDirection::UpLeft)
+                .and_then(|adjacent| adjacent.get_from_table(field));
+            let up_right = point
+                .get_adjacent(PointDirection::UpRight)
+                .and_then(|adjacent| adjacent.get_from_table(field));
+            let right: Option<&char> = point
+                .get_adjacent(PointDirection::Right)
+                .and_then(|adjacent| adjacent.get_from_table(field));
+            let down_right = point
+                .get_adjacent(PointDirection::DownRight)
+                .and_then(|adjacent| adjacent.get_from_table(field));
+            let down = point
+                .get_adjacent(PointDirection::Down)
+                .and_then(|adjacent| adjacent.get_from_table(field));
+            let down_left = point
+                .get_adjacent(PointDirection::DownLeft)
+                .and_then(|adjacent| adjacent.get_from_table(field));
+
+            let mut count = 0;
+
+            if is_corner(plot, &up_left, &left, &up) {
+                count += 1;
+            }
+
+            if is_corner(plot, &up_right, &right, &up) {
+                count += 1;
+            }
+
+            if is_corner(plot, &down_left, &left, &down) {
+                count += 1;
+            }
+
+            if is_corner(plot, &down_right, &right, &down) {
+                count += 1;
+            }
+
+            count
+        })
+        .sum()
+}
+
+fn is_corner(
+    plot: &char,
+    diagnal: &Option<&char>,
+    horizontal: &Option<&char>,
+    vertical: &Option<&char>,
+) -> bool {
+    (vertical.is_some_and(|adjacent| adjacent == plot)
+        && horizontal.is_some_and(|adjacent| adjacent == plot)
+        && diagnal.is_none_or(|adjacent| adjacent != plot))
+        || (vertical.is_none_or(|adjacent| adjacent != plot)
+            && horizontal.is_none_or(|adjacent| adjacent != plot))
+}
+
 fn count_perimeter(region: &[BoundedPoint], field: &Array2<char>) -> usize {
     region
         .iter()
@@ -140,73 +199,6 @@ fn count_perimeter(region: &[BoundedPoint], field: &Array2<char>) -> usize {
                         .get_adjacent(**direction)
                         .and_then(|adjacent| adjacent.get_from_table(field))
                         .is_none_or(|other_plot| plot != other_plot)
-                })
-                .count()
-        })
-        .sum()
-}
-
-fn count_fences(region: &[BoundedPoint], field: &Array2<char>) -> usize {
-    let north_fences = count_vertical_fences(VerticalDirection::Up, region, field);
-    let east_fences = count_horizontal_fences(HorizontalDirection::Right, region, field);
-    let south_fences = count_vertical_fences(VerticalDirection::Down, region, field);
-    let west_fences = count_horizontal_fences(HorizontalDirection::Left, region, field);
-    north_fences + east_fences + south_fences + west_fences
-}
-
-fn count_horizontal_fences(
-    direction: HorizontalDirection,
-    region: &[BoundedPoint],
-    field: &Array2<char>,
-) -> usize {
-    count_direction_fences(direction, region, field, |mut acc, (point, _)| {
-        let row: &mut Vec<_> = acc.entry(point.x).or_default();
-        row.push(point.y);
-        acc
-    })
-}
-
-fn count_vertical_fences(
-    direction: VerticalDirection,
-    region: &[BoundedPoint],
-    field: &Array2<char>,
-) -> usize {
-    count_direction_fences(direction, region, field, |mut acc, (point, _)| {
-        let row: &mut Vec<_> = acc.entry(point.y).or_default();
-        row.push(point.x);
-        acc
-    })
-}
-
-fn count_direction_fences<F>(
-    direction: impl Into<CardinalDirection> + Copy,
-    region: &[BoundedPoint],
-    field: &Array2<char>,
-    fold: F,
-) -> usize
-where
-    F: FnMut(HashMap<usize, Vec<usize>>, (&BoundedPoint, &char)) -> HashMap<usize, Vec<usize>>,
-{
-    region
-        .iter()
-        .map(|point| (point, point.get_from_table(field).expect("Exists")))
-        .filter(|(point, plot)| {
-            point
-                .get_adjacent(direction.into())
-                .and_then(|adjacent| adjacent.get_from_table(field))
-                .is_none_or(|other_plot| *plot != other_plot)
-        })
-        .fold(HashMap::new(), fold)
-        .values_mut()
-        .map(|axis| {
-            axis.sort();
-            axis.iter()
-                .coalesce(|before, after| {
-                    if *before + 1 == *after {
-                        Ok(after)
-                    } else {
-                        Err((before, after))
-                    }
                 })
                 .count()
         })
