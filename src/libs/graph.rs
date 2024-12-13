@@ -474,6 +474,24 @@ impl Direction for CardinalDirection {
     }
 }
 
+impl From<HorizontalDirection> for CardinalDirection {
+    fn from(value: HorizontalDirection) -> Self {
+        match value {
+            HorizontalDirection::Left => CardinalDirection::Left,
+            HorizontalDirection::Right => CardinalDirection::Right,
+        }
+    }
+}
+
+impl From<VerticalDirection> for CardinalDirection {
+    fn from(value: VerticalDirection) -> Self {
+        match value {
+            VerticalDirection::Up => CardinalDirection::Up,
+            VerticalDirection::Down => CardinalDirection::Down,
+        }
+    }
+}
+
 impl Direction for HorizontalDirection {
     fn get_rotation(&self, other: &Self) -> RotationDegrees {
         if self == other {
