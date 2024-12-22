@@ -243,11 +243,11 @@ fn shortest_path(start: &BoundedPoint, end: &BoundedPoint, data: &Array2<Memory>
             break;
         }
 
-        if *point.get_from_table(&visited).expect("Exists") {
+        let visit = point.get_mut_from_table(&mut visited).expect("Exists");
+        if *visit {
             continue;
         }
-
-        *visited.get_mut((point.y, point.x)).expect("exists") = true;
+        *visit = true;
 
         get_adjacent(&point, data)
             .filter(|adjacent| !adjacent.get_from_table(&visited).expect("exists"))

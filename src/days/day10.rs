@@ -107,11 +107,11 @@ where
     let mut visited = Array2::from_elem(mountain.dim(), false);
 
     while let Some(location) = queue.pop_front() {
-        if *location.get_from_table(&visited).unwrap_or(&false) {
+        let visit = location.get_mut_from_table(&mut visited).expect("Exists");
+        if *visit {
             continue;
         }
-
-        location.insert_into_table(true, &mut visited);
+        *visit = true;
 
         let height = location.get_from_table(mountain).expect("Valid index");
         if *height == 0 {

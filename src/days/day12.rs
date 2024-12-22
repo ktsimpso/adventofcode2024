@@ -83,11 +83,12 @@ impl Problem<Input, CommandLineArguments> for Day12 {
             queue.push_back(current);
 
             while let Some(next_plot) = queue.pop_front() {
-                if *next_plot.get_from_table(&visited).unwrap_or(&false) {
+                let visit = next_plot.get_mut_from_table(&mut visited).expect("Exists");
+                if *visit {
                     continue;
                 }
+                *visit = true;
 
-                next_plot.insert_into_table(true, &mut visited);
                 region.push(next_plot);
 
                 next_plot

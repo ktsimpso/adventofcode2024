@@ -49,6 +49,10 @@ impl BoundedPoint {
         table.get((self.y, self.x))
     }
 
+    pub fn get_mut_from_table<'a, T>(&self, table: &'a mut Array2<T>) -> Option<&'a mut T> {
+        table.get_mut((self.y, self.x))
+    }
+
     pub fn insert_into_table<T>(&self, value: T, table: &mut Array2<T>) {
         *table.get_mut((self.y, self.x)).expect("position exists") = value;
     }
