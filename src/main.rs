@@ -1,5 +1,6 @@
 #![feature(iter_map_windows)]
 #![feature(let_chains)]
+#![recursion_limit = "256"]
 mod days;
 mod fetch_input;
 mod libs;
@@ -12,6 +13,7 @@ use anyhow::Result;
 use clap::Command as ClapCommand;
 use days::{
     day01, day02, day03, day04, day05, day06, day07, day08, day09, day10, day11, day12, day13,
+    day14,
 };
 use libs::cli::AsCommand;
 
@@ -38,6 +40,7 @@ fn main() -> Result<()> {
         day11::DAY_11.as_command(),
         day12::DAY_12.as_command(),
         day13::DAY_13.as_command(),
+        day14::DAY_14.as_command(),
     ]
     .into_iter()
     .map(|command| (command.get_name(), command))
