@@ -13,7 +13,7 @@ use anyhow::Result;
 use clap::Command as ClapCommand;
 use days::{
     day01, day02, day03, day04, day05, day06, day07, day08, day09, day10, day11, day12, day13,
-    day14, day15,
+    day14, day15, day16,
 };
 use libs::cli::AsCommand;
 
@@ -42,6 +42,7 @@ fn main() -> Result<()> {
         day13::DAY_13.as_command(),
         day14::DAY_14.as_command(),
         day15::DAY_15.as_command(),
+        day16::DAY_16.as_command(),
     ]
     .into_iter()
     .map(|command| (command.get_name(), command))
