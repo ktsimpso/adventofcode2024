@@ -4,6 +4,7 @@ use crate::libs::{
     parse::{parse_table2, StringParse},
     problem::Problem,
 };
+use adventofcode_macro::problem_day;
 use chumsky::{error::Rich, extra, prelude::one_of, Parser};
 use clap::{Args, ValueEnum};
 use ndarray::Array2;
@@ -62,55 +63,50 @@ pub struct CommandLineArguments {
     fence_score: FenceScore,
 }
 
-pub struct Day12 {}
+#[problem_day(Day12)]
+fn run(input: Input, arguments: &CommandLineArguments) -> usize {
+    let (max_x, max_y) = BoundedPoint::maxes_from_table(&input.0);
+    let mut visited = Array2::from_elem(input.0.dim(), false);
+    let mut regions = Vec::new();
 
-impl Problem<Input, CommandLineArguments> for Day12 {
-    type Output = usize;
-
-    fn run(input: Input, arguments: &CommandLineArguments) -> Self::Output {
-        let (max_x, max_y) = BoundedPoint::maxes_from_table(&input.0);
-        let mut visited = Array2::from_elem(input.0.dim(), false);
-        let mut regions = Vec::new();
-
-        for (index, plot) in input.0.indexed_iter() {
-            let current = BoundedPoint::from_table_index(index, max_x, max_y);
-            if *current.get_from_table(&visited).unwrap_or(&false) {
-                continue;
-            }
-
-            let mut region = Vec::new();
-            let mut queue = VecDeque::new();
-            queue.push_back(current);
-
-            while let Some(next_plot) = queue.pop_front() {
-                let visit = next_plot.get_mut_from_table(&mut visited).expect("Exists");
-                if *visit {
-                    continue;
-                }
-                *visit = true;
-
-                region.push(next_plot);
-
-                next_plot
-                    .into_iter_cardinal_adjacent()
-                    .filter(|adjacent| !*adjacent.get_from_table(&visited).unwrap_or(&false))
-                    .filter(|adjacent| adjacent.get_from_table(&input.0).expect("Exists") == plot)
-                    .for_each(|adjacent| queue.push_back(adjacent));
-            }
-
-            regions.push(region);
+    for (index, plot) in input.0.indexed_iter() {
+        let current = BoundedPoint::from_table_index(index, max_x, max_y);
+        if *current.get_from_table(&visited).unwrap_or(&false) {
+            continue;
         }
 
-        let fence_score = match arguments.fence_score {
-            FenceScore::Perimeter => count_perimeter,
-            FenceScore::Fences => count_corners,
-        };
+        let mut region = Vec::new();
+        let mut queue = VecDeque::new();
+        queue.push_back(current);
 
-        regions
-            .into_iter()
-            .map(|region| score_region(&region, &input.0, fence_score))
-            .sum()
+        while let Some(next_plot) = queue.pop_front() {
+            let visit = next_plot.get_mut_from_table(&mut visited).expect("Exists");
+            if *visit {
+                continue;
+            }
+            *visit = true;
+
+            region.push(next_plot);
+
+            next_plot
+                .into_iter_cardinal_adjacent()
+                .filter(|adjacent| !*adjacent.get_from_table(&visited).unwrap_or(&false))
+                .filter(|adjacent| adjacent.get_from_table(&input.0).expect("Exists") == plot)
+                .for_each(|adjacent| queue.push_back(adjacent));
+        }
+
+        regions.push(region);
     }
+
+    let fence_score = match arguments.fence_score {
+        FenceScore::Perimeter => count_perimeter,
+        FenceScore::Fences => count_corners,
+    };
+
+    regions
+        .into_iter()
+        .map(|region| score_region(&region, &input.0, fence_score))
+        .sum()
 }
 
 fn score_region<F>(region: &[BoundedPoint], field: &Array2<char>, fence_function: F) -> usize

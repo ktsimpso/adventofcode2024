@@ -4,6 +4,7 @@ use crate::libs::{
     parse::{parse_digit, parse_table2, StringParse},
     problem::Problem,
 };
+use adventofcode_macro::problem_day;
 use ahash::{AHashMap, AHashSet};
 use chumsky::{error::Rich, extra, Parser};
 use clap::{Args, ValueEnum};
@@ -54,29 +55,24 @@ pub struct CommandLineArguments {
     scoring: ScoringSystem,
 }
 
-pub struct Day10 {}
-
-impl Problem<Input, CommandLineArguments> for Day10 {
-    type Output = usize;
-
-    fn run(input: Input, arguments: &CommandLineArguments) -> Self::Output {
-        match arguments.scoring {
-            ScoringSystem::UniquePeaks => find_trail_path_score(
-                &input.0,
-                |point| AHashSet::from([*point]),
-                |point, peaks, score| {
-                    let trail_endings = score.entry(*point).or_default();
-                    trail_endings.extend(peaks.clone());
-                },
-                |score| score.len(),
-            ),
-            ScoringSystem::UniquePaths => find_trail_path_score(
-                &input.0,
-                |_point| 1,
-                |point, peaks, score| *score.entry(*point).or_insert(0) += peaks,
-                |score| *score,
-            ),
-        }
+#[problem_day(Day10)]
+fn run(input: Input, arguments: &CommandLineArguments) -> usize {
+    match arguments.scoring {
+        ScoringSystem::UniquePeaks => find_trail_path_score(
+            &input.0,
+            |point| AHashSet::from([*point]),
+            |point, peaks, score| {
+                let trail_endings = score.entry(*point).or_default();
+                trail_endings.extend(peaks.clone());
+            },
+            |score| score.len(),
+        ),
+        ScoringSystem::UniquePaths => find_trail_path_score(
+            &input.0,
+            |_point| 1,
+            |point, peaks, score| *score.entry(*point).or_insert(0) += peaks,
+            |score| *score,
+        ),
     }
 }
 

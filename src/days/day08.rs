@@ -4,6 +4,7 @@ use crate::libs::{
     parse::{parse_table2, StringParse},
     problem::Problem,
 };
+use adventofcode_macro::problem_day;
 use ahash::AHashMap;
 use chumsky::{
     error::Rich,
@@ -75,39 +76,34 @@ enum Dish {
     Antena(char),
 }
 
-pub struct Day08 {}
+#[problem_day(Day08)]
+fn run(input: Input, arguments: &CommandLineArguments) -> usize {
+    let (max_x, max_y) = BoundedPoint::maxes_from_table(&input.0);
 
-impl Problem<Input, CommandLineArguments> for Day08 {
-    type Output = usize;
-
-    fn run(input: Input, arguments: &CommandLineArguments) -> Self::Output {
-        let (max_x, max_y) = BoundedPoint::maxes_from_table(&input.0);
-
-        input
-            .0
-            .indexed_iter()
-            .filter(|(_, location)| matches!(location, Dish::Antena(_)))
-            .fold(AHashMap::new(), |mut acc, (index, item)| {
-                match item {
-                    Dish::Antena(key) => {
-                        let items: &mut Vec<BoundedPoint> = acc.entry(key).or_default();
-                        items.push(BoundedPoint::from_table_index(index, max_x, max_y));
-                    }
-                    _ => unreachable!(),
+    input
+        .0
+        .indexed_iter()
+        .filter(|(_, location)| matches!(location, Dish::Antena(_)))
+        .fold(AHashMap::new(), |mut acc, (index, item)| {
+            match item {
+                Dish::Antena(key) => {
+                    let items: &mut Vec<BoundedPoint> = acc.entry(key).or_default();
+                    items.push(BoundedPoint::from_table_index(index, max_x, max_y));
                 }
+                _ => unreachable!(),
+            }
 
-                acc
-            })
-            .values()
-            .flat_map(|antenas| {
-                antenas
-                    .iter()
-                    .tuple_combinations()
-                    .flat_map(|(a, b)| (antinodes_from_points(a, b, &arguments.resonance)))
-            })
-            .unique()
-            .count()
-    }
+            acc
+        })
+        .values()
+        .flat_map(|antenas| {
+            antenas
+                .iter()
+                .tuple_combinations()
+                .flat_map(|(a, b)| (antinodes_from_points(a, b, &arguments.resonance)))
+        })
+        .unique()
+        .count()
 }
 
 fn antinodes_from_points(

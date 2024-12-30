@@ -3,6 +3,7 @@ use crate::libs::{
     parse::{parse_alphanumeric, parse_lines, StringParse},
     problem::{Problem, ProblemResult},
 };
+use adventofcode_macro::problem_day;
 use ahash::{AHashMap, AHashSet};
 use chumsky::{
     error::Rich,
@@ -115,39 +116,34 @@ pub struct CommandLineArguments {
     wire_task: WireTask,
 }
 
-pub struct Day24 {}
+#[problem_day(Day24)]
+fn run(input: Input, arguments: &CommandLineArguments) -> ProblemResult {
+    let gates = input.gates;
 
-impl Problem<Input, CommandLineArguments> for Day24 {
-    type Output = ProblemResult;
+    match arguments.wire_task {
+        WireTask::Simulate => {
+            let mut gate_values = input.gate_values.into_iter().collect::<AHashMap<_, _>>();
+            simulate_gates(&mut gate_values, &gates);
+            extract_output_gates(&gate_values).into()
+        }
+        WireTask::FixAdder => {
+            let mut carry_in = None;
+            let mut swapped_gates = Vec::new();
 
-    fn run(input: Input, arguments: &CommandLineArguments) -> Self::Output {
-        let gates = input.gates;
+            for i in 0.. {
+                let result = find_addition_carry_and_swaps(i, carry_in, &gates);
+                carry_in = result.0;
+                result.1.into_iter().for_each(|(gate1, gate2)| {
+                    swapped_gates.push(gate1);
+                    swapped_gates.push(gate2);
+                });
 
-        match arguments.wire_task {
-            WireTask::Simulate => {
-                let mut gate_values = input.gate_values.into_iter().collect::<AHashMap<_, _>>();
-                simulate_gates(&mut gate_values, &gates);
-                extract_output_gates(&gate_values).into()
-            }
-            WireTask::FixAdder => {
-                let mut carry_in = None;
-                let mut swapped_gates = Vec::new();
-
-                for i in 0.. {
-                    let result = find_addition_carry_and_swaps(i, carry_in, &gates);
-                    carry_in = result.0;
-                    result.1.into_iter().for_each(|(gate1, gate2)| {
-                        swapped_gates.push(gate1);
-                        swapped_gates.push(gate2);
-                    });
-
-                    if carry_in.is_none() {
-                        break;
-                    }
+                if carry_in.is_none() {
+                    break;
                 }
-
-                swapped_gates.into_iter().sorted().join(",").into()
             }
+
+            swapped_gates.into_iter().sorted().join(",").into()
         }
     }
 }

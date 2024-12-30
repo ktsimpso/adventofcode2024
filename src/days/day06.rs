@@ -4,6 +4,7 @@ use crate::libs::{
     parse::{parse_table2, StringParse},
     problem::Problem,
 };
+use adventofcode_macro::problem_day;
 use chumsky::{
     error::Rich,
     extra,
@@ -70,57 +71,52 @@ pub struct CommandLineArguments {
     avoidence_strategy: AvoidenceStrategy,
 }
 
-pub struct Day06 {}
+#[problem_day(Day06)]
+fn run(input: Input, arguments: &CommandLineArguments) -> usize {
+    let (max_x, max_y) = BoundedPoint::maxes_from_table(&input.0);
 
-impl Problem<Input, CommandLineArguments> for Day06 {
-    type Output = usize;
+    let guard_position = input
+        .0
+        .indexed_iter()
+        .find(|(_, location)| matches!(location, Lab::Guard))
+        .map(|(location, _)| BoundedPoint::from_table_index(location, max_x, max_y))
+        .expect("Guard exists");
+    let guard_facing = CardinalDirection::Up;
 
-    fn run(input: Input, arguments: &CommandLineArguments) -> Self::Output {
-        let (max_x, max_y) = BoundedPoint::maxes_from_table(&input.0);
+    let guard_path = run(guard_position, guard_facing, &input.0)
+        .map(|visited| {
+            visited
+                .fold_axis(Axis(2), false, |acc, value| *acc || *value)
+                .indexed_iter()
+                .filter(|(_, value)| **value)
+                .map(|(index, _)| index)
+                .collect::<Vec<_>>()
+        })
+        .expect("Result exists");
 
-        let guard_position = input
-            .0
-            .indexed_iter()
-            .find(|(_, location)| matches!(location, Lab::Guard))
-            .map(|(location, _)| BoundedPoint::from_table_index(location, max_x, max_y))
-            .expect("Guard exists");
-        let guard_facing = CardinalDirection::Up;
-
-        let guard_path = run(guard_position, guard_facing, &input.0)
-            .map(|visited| {
-                visited
-                    .fold_axis(Axis(2), false, |acc, value| *acc || *value)
-                    .indexed_iter()
-                    .filter(|(_, value)| **value)
-                    .map(|(index, _)| index)
-                    .collect::<Vec<_>>()
-            })
-            .expect("Result exists");
-
-        match arguments.avoidence_strategy {
-            AvoidenceStrategy::FullPath => guard_path.len(),
-            AvoidenceStrategy::Loop => {
-                let mut sparse_lab = build_obstruction_mapping(&input.0);
-                let mut visited = Array3::from_elem((max_y + 1, max_x + 1, 4), 0);
-                guard_path
-                    .into_iter()
-                    .map(|index| BoundedPoint::from_table_index(index, max_x, max_y))
-                    .filter(|point| *point != guard_position)
-                    .enumerate()
-                    .filter(|(index, obstruction)| {
-                        let old = add_obstruction(*obstruction, &mut sparse_lab);
-                        let result = does_guard_loop(
-                            guard_position,
-                            guard_facing,
-                            (index + 1) as u16,
-                            &sparse_lab,
-                            &mut visited,
-                        );
-                        restore_lab(*obstruction, old, &mut sparse_lab);
-                        result
-                    })
-                    .count()
-            }
+    match arguments.avoidence_strategy {
+        AvoidenceStrategy::FullPath => guard_path.len(),
+        AvoidenceStrategy::Loop => {
+            let mut sparse_lab = build_obstruction_mapping(&input.0);
+            let mut visited = Array3::from_elem((max_y + 1, max_x + 1, 4), 0);
+            guard_path
+                .into_iter()
+                .map(|index| BoundedPoint::from_table_index(index, max_x, max_y))
+                .filter(|point| *point != guard_position)
+                .enumerate()
+                .filter(|(index, obstruction)| {
+                    let old = add_obstruction(*obstruction, &mut sparse_lab);
+                    let result = does_guard_loop(
+                        guard_position,
+                        guard_facing,
+                        (index + 1) as u16,
+                        &sparse_lab,
+                        &mut visited,
+                    );
+                    restore_lab(*obstruction, old, &mut sparse_lab);
+                    result
+                })
+                .count()
         }
     }
 }

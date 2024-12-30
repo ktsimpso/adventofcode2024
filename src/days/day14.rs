@@ -3,6 +3,7 @@ use crate::libs::{
     parse::{parse_isize, parse_lines, StringParse},
     problem::Problem,
 };
+use adventofcode_macro::problem_day;
 use ahash::AHashMap;
 use chumsky::{error::Rich, extra, prelude::just, Parser};
 use clap::value_parser;
@@ -130,91 +131,85 @@ enum Quandrant {
     SouthWest,
 }
 
-pub struct Day14 {}
+#[problem_day(Day14)]
+fn run(input: Input, arguments: &CommandLineArguments) -> isize {
+    let x_size = arguments.x_size as isize;
+    let y_size = arguments.y_size as isize;
+    match arguments.robot_stat {
+        RobotStat::SafetyFactor(t) => input
+            .0
+            .into_iter()
+            .map(|robot| calculate_position_after(&robot, x_size, y_size, t as isize))
+            .flat_map(|(x_pos, y_pos)| find_quadrant(x_pos, y_pos, x_size, y_size))
+            .fold(AHashMap::new(), |mut acc, quandrant| {
+                *acc.entry(quandrant).or_insert(0) += 1;
+                acc
+            })
+            .values()
+            .product(),
+        RobotStat::FindTree(should_print_tree) => {
+            let t = max(x_size, y_size);
 
-impl Problem<Input, CommandLineArguments> for Day14 {
-    type Output = isize;
+            let mut min_y_index = 0;
+            let mut min_y = f64::MAX;
+            let mut min_x_index = 0;
+            let mut min_x = f64::MAX;
 
-    fn run(input: Input, arguments: &CommandLineArguments) -> Self::Output {
-        let x_size = arguments.x_size as isize;
-        let y_size = arguments.y_size as isize;
-        match arguments.robot_stat {
-            RobotStat::SafetyFactor(t) => input
-                .0
-                .into_iter()
-                .map(|robot| calculate_position_after(&robot, x_size, y_size, t as isize))
-                .flat_map(|(x_pos, y_pos)| find_quadrant(x_pos, y_pos, x_size, y_size))
-                .fold(AHashMap::new(), |mut acc, quandrant| {
-                    *acc.entry(quandrant).or_insert(0) += 1;
-                    acc
-                })
-                .values()
-                .product(),
-            RobotStat::FindTree(should_print_tree) => {
-                let t = max(x_size, y_size);
+            for i in 0..t {
+                let new_positions = input
+                    .0
+                    .iter()
+                    .map(|robot| calculate_position_after(robot, x_size, y_size, i))
+                    .collect::<Vec<_>>();
 
-                let mut min_y_index = 0;
-                let mut min_y = f64::MAX;
-                let mut min_x_index = 0;
-                let mut min_x = f64::MAX;
-
-                for i in 0..t {
-                    let new_positions = input
-                        .0
+                if i < x_size {
+                    let mean = new_positions.iter().map(|(x, _)| *x).sum::<isize>() as f64
+                        / input.0.len() as f64;
+                    let variance = new_positions
                         .iter()
-                        .map(|robot| calculate_position_after(robot, x_size, y_size, i))
-                        .collect::<Vec<_>>();
+                        .map(|(x, _)| *x)
+                        .map(|x| x as f64 - mean)
+                        .map(|x| x * x)
+                        .sum::<f64>();
 
-                    if i < x_size {
-                        let mean = new_positions.iter().map(|(x, _)| *x).sum::<isize>() as f64
-                            / input.0.len() as f64;
-                        let variance = new_positions
-                            .iter()
-                            .map(|(x, _)| *x)
-                            .map(|x| x as f64 - mean)
-                            .map(|x| x * x)
-                            .sum::<f64>();
-
-                        if variance < min_x {
-                            min_x = variance;
-                            min_x_index = i;
-                        }
-                    }
-
-                    if i < y_size {
-                        let mean = new_positions.iter().map(|(_, y)| *y).sum::<isize>() as f64
-                            / input.0.len() as f64;
-                        let variance = new_positions
-                            .iter()
-                            .map(|(_, y)| *y)
-                            .map(|y| y as f64 - mean)
-                            .map(|y| y * y)
-                            .sum::<f64>();
-
-                        if variance < min_y {
-                            min_y = variance;
-                            min_y_index = i;
-                        }
+                    if variance < min_x {
+                        min_x = variance;
+                        min_x_index = i;
                     }
                 }
 
-                let result =
-                    find_alignment(min_x_index, x_size, min_y_index, y_size).expect("Exists");
-
-                if should_print_tree {
-                    let tree = input
-                        .0
+                if i < y_size {
+                    let mean = new_positions.iter().map(|(_, y)| *y).sum::<isize>() as f64
+                        / input.0.len() as f64;
+                    let variance = new_positions
                         .iter()
-                        .map(|robot| Robot {
-                            position: calculate_position_after(robot, x_size, y_size, result),
-                            ..*robot
-                        })
-                        .collect::<Vec<_>>();
+                        .map(|(_, y)| *y)
+                        .map(|y| y as f64 - mean)
+                        .map(|y| y * y)
+                        .sum::<f64>();
 
-                    print_tree(&tree, x_size, y_size);
+                    if variance < min_y {
+                        min_y = variance;
+                        min_y_index = i;
+                    }
                 }
-                result
             }
+
+            let result = find_alignment(min_x_index, x_size, min_y_index, y_size).expect("Exists");
+
+            if should_print_tree {
+                let tree = input
+                    .0
+                    .iter()
+                    .map(|robot| Robot {
+                        position: calculate_position_after(robot, x_size, y_size, result),
+                        ..*robot
+                    })
+                    .collect::<Vec<_>>();
+
+                print_tree(&tree, x_size, y_size);
+            }
+            result
         }
     }
 }

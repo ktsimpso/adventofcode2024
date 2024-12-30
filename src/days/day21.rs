@@ -3,6 +3,7 @@ use crate::libs::{
     parse::{parse_lines, StringParse},
     problem::Problem,
 };
+use adventofcode_macro::problem_day;
 use ahash::AHashMap;
 use chumsky::{
     error::Rich,
@@ -382,30 +383,25 @@ pub struct CommandLineArguments {
     )]
     n: usize,
 }
+#[problem_day(Day21)]
+fn run(input: Input, arguments: &CommandLineArguments) -> usize {
+    input
+        .0
+        .into_iter()
+        .map(|code| {
+            let button_presses = once(Code::Activate)
+                .chain(code.clone())
+                .tuple_windows()
+                .map(|(source, dest)| {
+                    press_button(
+                        source.get_shortest_sequence(&dest),
+                        arguments.n + 1,
+                        &mut AHashMap::new(),
+                    )
+                })
+                .sum::<usize>();
 
-pub struct Day21 {}
-
-impl Problem<Input, CommandLineArguments> for Day21 {
-    type Output = usize;
-
-    fn run(input: Input, arguments: &CommandLineArguments) -> Self::Output {
-        input
-            .0
-            .into_iter()
-            .map(|code| {
-                let button_presses = once(Code::Activate)
-                    .chain(code.clone())
-                    .tuple_windows()
-                    .map(|(source, dest)| {
-                        press_button(
-                            source.get_shortest_sequence(&dest),
-                            arguments.n + 1,
-                            &mut AHashMap::new(),
-                        )
-                    })
-                    .sum::<usize>();
-
-                button_presses
+            button_presses
                     * code
                         .iter()
                         .filter(|item| !matches!(item, Code::Activate))
@@ -425,9 +421,8 @@ impl Problem<Input, CommandLineArguments> for Day21 {
                             Code::Activate => unreachable!(),
                         } * 10_usize.pow(index as u32))
                         .sum::<usize>()
-            })
-            .sum()
-    }
+        })
+        .sum()
 }
 
 fn press_button(

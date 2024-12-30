@@ -3,6 +3,7 @@ use crate::libs::{
     parse::{parse_lines, StringParse},
     problem::{Problem, ProblemResult},
 };
+use adventofcode_macro::problem_day;
 use ahash::{AHashMap, AHashSet};
 use chumsky::{
     error::Rich,
@@ -64,68 +65,63 @@ pub struct CommandLineArguments {
     connection_information: ConnectionInformation,
 }
 
-pub struct Day23 {}
+#[problem_day(Day23)]
+fn run(input: Input, arguments: &CommandLineArguments) -> ProblemResult {
+    let computer_to_connections = input.0.into_iter().fold(
+        AHashMap::new(),
+        |mut acc: AHashMap<String, AHashSet<String>>, (a, b)| {
+            let a_entry = acc.entry(a.clone()).or_default();
+            a_entry.insert(b.clone());
+            let b_entry = acc.entry(b).or_default();
+            b_entry.insert(a);
+            acc
+        },
+    );
 
-impl Problem<Input, CommandLineArguments> for Day23 {
-    type Output = ProblemResult;
+    match arguments.connection_information {
+        ConnectionInformation::MutualTruplesWithT => {
+            let mut visited = AHashSet::new();
 
-    fn run(input: Input, arguments: &CommandLineArguments) -> Self::Output {
-        let computer_to_connections = input.0.into_iter().fold(
-            AHashMap::new(),
-            |mut acc: AHashMap<String, AHashSet<String>>, (a, b)| {
-                let a_entry = acc.entry(a.clone()).or_default();
-                a_entry.insert(b.clone());
-                let b_entry = acc.entry(b).or_default();
-                b_entry.insert(a);
-                acc
-            },
-        );
+            computer_to_connections
+                .keys()
+                .filter(|computer| computer.starts_with("t"))
+                .map(|key| {
+                    let connections = computer_to_connections.get(key).expect("Exists");
+                    let mut local_visit = AHashSet::new();
+                    let result = connections
+                        .iter()
+                        .filter(|connection| !visited.contains(connection))
+                        .map(|connection| {
+                            let connections_connections =
+                                computer_to_connections.get(connection).expect("Exists");
+                            let mutual_connections = connections
+                                .intersection(connections_connections)
+                                .filter(|connection| !visited.contains(connection))
+                                .filter(|connection| !local_visit.contains(connection))
+                                .count();
 
-        match arguments.connection_information {
-            ConnectionInformation::MutualTruplesWithT => {
-                let mut visited = AHashSet::new();
+                            local_visit.insert(connection);
 
-                computer_to_connections
-                    .keys()
-                    .filter(|computer| computer.starts_with("t"))
-                    .map(|key| {
-                        let connections = computer_to_connections.get(key).expect("Exists");
-                        let mut local_visit = AHashSet::new();
-                        let result = connections
-                            .iter()
-                            .filter(|connection| !visited.contains(connection))
-                            .map(|connection| {
-                                let connections_connections =
-                                    computer_to_connections.get(connection).expect("Exists");
-                                let mutual_connections = connections
-                                    .intersection(connections_connections)
-                                    .filter(|connection| !visited.contains(connection))
-                                    .filter(|connection| !local_visit.contains(connection))
-                                    .count();
-
-                                local_visit.insert(connection);
-
-                                mutual_connections
-                            })
-                            .sum::<usize>();
-                        visited.insert(key);
-                        result
-                    })
-                    .sum::<usize>()
-                    .into()
-            }
-            ConnectionInformation::MostMutualConnections => get_most_mutual_connections(
-                AHashSet::new(),
-                computer_to_connections.keys().map(|s| s.as_str()).collect(),
-                AHashSet::new(),
-                0,
-                &computer_to_connections,
-            )
-            .into_iter()
-            .sorted()
-            .join(",")
-            .into(),
+                            mutual_connections
+                        })
+                        .sum::<usize>();
+                    visited.insert(key);
+                    result
+                })
+                .sum::<usize>()
+                .into()
         }
+        ConnectionInformation::MostMutualConnections => get_most_mutual_connections(
+            AHashSet::new(),
+            computer_to_connections.keys().map(|s| s.as_str()).collect(),
+            AHashSet::new(),
+            0,
+            &computer_to_connections,
+        )
+        .into_iter()
+        .sorted()
+        .join(",")
+        .into(),
     }
 }
 

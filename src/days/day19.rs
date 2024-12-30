@@ -3,6 +3,7 @@ use crate::libs::{
     parse::{parse_lines, StringParse},
     problem::Problem,
 };
+use adventofcode_macro::problem_day;
 use ahash::AHashMap;
 use chumsky::{
     error::Rich,
@@ -96,26 +97,21 @@ pub struct CommandLineArguments {
     towel_options: TowelOptions,
 }
 
-pub struct Day19 {}
+#[problem_day(Day19)]
+fn run(input: Input, arguments: &CommandLineArguments) -> usize {
+    let prefix_map = build_prefix_map(&input.available_towels);
 
-impl Problem<Input, CommandLineArguments> for Day19 {
-    type Output = usize;
-
-    fn run(input: Input, arguments: &CommandLineArguments) -> Self::Output {
-        let prefix_map = build_prefix_map(&input.available_towels);
-
-        match arguments.towel_options {
-            TowelOptions::TowelPossible => input
-                .target_towels
-                .into_iter()
-                .filter(|target| is_possible(target, &prefix_map))
-                .count(),
-            TowelOptions::NumberOfWaysPossible => input
-                .target_towels
-                .into_iter()
-                .map(|target| count_possible(&target, &prefix_map, &mut vec![None; target.len()]))
-                .sum(),
-        }
+    match arguments.towel_options {
+        TowelOptions::TowelPossible => input
+            .target_towels
+            .into_iter()
+            .filter(|target| is_possible(target, &prefix_map))
+            .count(),
+        TowelOptions::NumberOfWaysPossible => input
+            .target_towels
+            .into_iter()
+            .map(|target| count_possible(&target, &prefix_map, &mut vec![None; target.len()]))
+            .sum(),
     }
 }
 

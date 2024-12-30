@@ -4,6 +4,7 @@ use crate::libs::{
     parse::{parse_lines, parse_usize, StringParse},
     problem::{Problem, ProblemResult},
 };
+use adventofcode_macro::problem_day;
 use chumsky::{error::Rich, extra, prelude::just, Parser};
 use clap::value_parser;
 use ndarray::Array2;
@@ -111,53 +112,48 @@ enum Memory {
     Safe,
 }
 
-pub struct Day18 {}
+#[problem_day(Day18)]
+fn run(input: Input, arguments: &CommandLineArguments) -> ProblemResult {
+    match arguments.path_stat {
+        PathStat::ShortestPath(n) => {
+            let mut data =
+                Array2::from_elem((arguments.x_size + 1, arguments.y_size + 1), Memory::Safe);
 
-impl Problem<Input, CommandLineArguments> for Day18 {
-    type Output = ProblemResult;
-
-    fn run(input: Input, arguments: &CommandLineArguments) -> Self::Output {
-        match arguments.path_stat {
-            PathStat::ShortestPath(n) => {
-                let mut data =
-                    Array2::from_elem((arguments.x_size + 1, arguments.y_size + 1), Memory::Safe);
-
-                input
-                    .0
-                    .into_iter()
-                    .take(n)
-                    .map(|(x, y)| BoundedPoint {
-                        x,
-                        y,
-                        max_x: arguments.x_size,
-                        max_y: arguments.y_size,
-                    })
-                    .for_each(|point| {
-                        *data.get_mut((point.y, point.x)).expect("exists") = Memory::Corrupted;
-                    });
-
-                let start = BoundedPoint {
-                    x: 0,
-                    y: 0,
+            input
+                .0
+                .into_iter()
+                .take(n)
+                .map(|(x, y)| BoundedPoint {
+                    x,
+                    y,
                     max_x: arguments.x_size,
                     max_y: arguments.y_size,
-                };
+                })
+                .for_each(|point| {
+                    *data.get_mut((point.y, point.x)).expect("exists") = Memory::Corrupted;
+                });
 
-                let end = BoundedPoint {
-                    x: arguments.x_size,
-                    y: arguments.y_size,
-                    max_x: arguments.x_size,
-                    max_y: arguments.y_size,
-                };
+            let start = BoundedPoint {
+                x: 0,
+                y: 0,
+                max_x: arguments.x_size,
+                max_y: arguments.y_size,
+            };
 
-                shortest_path(&start, &end, &data).expect("Exists").into()
-            }
-            PathStat::FirstBlockage => {
-                find_first_blockage(&input.0, arguments.x_size, arguments.y_size)
-                    .map(|(x, y)| format!("{},{}", x, y))
-                    .expect("Exists")
-                    .into()
-            }
+            let end = BoundedPoint {
+                x: arguments.x_size,
+                y: arguments.y_size,
+                max_x: arguments.x_size,
+                max_y: arguments.y_size,
+            };
+
+            shortest_path(&start, &end, &data).expect("Exists").into()
+        }
+        PathStat::FirstBlockage => {
+            find_first_blockage(&input.0, arguments.x_size, arguments.y_size)
+                .map(|(x, y)| format!("{},{}", x, y))
+                .expect("Exists")
+                .into()
         }
     }
 }

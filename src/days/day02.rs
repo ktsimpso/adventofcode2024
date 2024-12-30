@@ -3,6 +3,7 @@ use crate::libs::{
     parse::{parse_lines, parse_usize, StringParse},
     problem::Problem,
 };
+use adventofcode_macro::problem_day;
 use ahash::AHashSet;
 use chumsky::{error::Rich, extra, prelude::just, IterParser, Parser};
 use clap::Args;
@@ -47,26 +48,21 @@ pub struct CommandLineArguments {
     error_correction: bool,
 }
 
-pub struct Day02 {}
+#[problem_day(Day02)]
+fn run(input: Input, arguments: &CommandLineArguments) -> usize {
+    let (valid, potentially_invalid): (Vec<_>, Vec<_>) = input
+        .0
+        .into_iter()
+        .partition(|report| validate_report(report));
 
-impl Problem<Input, CommandLineArguments> for Day02 {
-    type Output = usize;
-
-    fn run(input: Input, arguments: &CommandLineArguments) -> Self::Output {
-        let (valid, potentially_invalid): (Vec<_>, Vec<_>) = input
-            .0
-            .into_iter()
-            .partition(|report| validate_report(report));
-
-        if arguments.error_correction {
-            valid.len()
-                + potentially_invalid
-                    .into_iter()
-                    .filter(|report| validate_report_with_error(report))
-                    .count()
-        } else {
-            valid.len()
-        }
+    if arguments.error_correction {
+        valid.len()
+            + potentially_invalid
+                .into_iter()
+                .filter(|report| validate_report_with_error(report))
+                .count()
+    } else {
+        valid.len()
     }
 }
 

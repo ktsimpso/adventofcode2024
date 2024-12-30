@@ -3,6 +3,7 @@ use crate::libs::{
     parse::{parse_lines, parse_usize, StringParse},
     problem::Problem,
 };
+use adventofcode_macro::problem_day;
 use chumsky::{error::Rich, extra, prelude::just, IterParser, Parser};
 use clap::{Args, ValueEnum};
 use std::sync::LazyLock;
@@ -67,25 +68,20 @@ enum Operator {
     Concat,
 }
 
-pub struct Day07 {}
-
-impl Problem<Input, CommandLineArguments> for Day07 {
-    type Output = usize;
-
-    fn run(input: Input, arguments: &CommandLineArguments) -> Self::Output {
-        input
-            .0
-            .into_iter()
-            .filter(|test_input| {
-                can_satisfy(
-                    &test_input.test_values,
-                    test_input.result,
-                    &arguments.operators,
-                )
-            })
-            .map(|test_input| test_input.result)
-            .sum()
-    }
+#[problem_day(Day07)]
+fn run(input: Input, arguments: &CommandLineArguments) -> usize {
+    input
+        .0
+        .into_iter()
+        .filter(|test_input| {
+            can_satisfy(
+                &test_input.test_values,
+                test_input.result,
+                &arguments.operators,
+            )
+        })
+        .map(|test_input| test_input.result)
+        .sum()
 }
 
 fn can_satisfy(test_values: &[usize], target: usize, operators: &[Operator]) -> bool {

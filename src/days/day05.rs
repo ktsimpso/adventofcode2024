@@ -3,6 +3,7 @@ use crate::libs::{
     parse::{parse_usize, StringParse},
     problem::Problem,
 };
+use adventofcode_macro::problem_day;
 use ahash::{AHashMap, AHashSet};
 use chumsky::{
     error::Rich,
@@ -73,29 +74,24 @@ pub struct CommandLineArguments {
     valid: bool,
 }
 
-pub struct Day05 {}
+#[problem_day(Day05)]
+fn run(input: Input, arguments: &CommandLineArguments) -> usize {
+    let rule_map = build_page_rule_mapping(&input.page_rules);
 
-impl Problem<Input, CommandLineArguments> for Day05 {
-    type Output = usize;
-
-    fn run(input: Input, arguments: &CommandLineArguments) -> Self::Output {
-        let rule_map = build_page_rule_mapping(&input.page_rules);
-
-        if arguments.valid {
-            input
-                .page_updates
-                .into_iter()
-                .filter(|page_update| is_valid_page_update(page_update, &rule_map))
-                .map(|page_update| *page_update.get(page_update.len() / 2).unwrap_or(&0))
-                .sum()
-        } else {
-            input
-                .page_updates
-                .into_iter()
-                .filter(|page_update| !is_valid_page_update(page_update, &rule_map))
-                .map(|page_update| find_center_of_page_update(&page_update, &rule_map))
-                .sum()
-        }
+    if arguments.valid {
+        input
+            .page_updates
+            .into_iter()
+            .filter(|page_update| is_valid_page_update(page_update, &rule_map))
+            .map(|page_update| *page_update.get(page_update.len() / 2).unwrap_or(&0))
+            .sum()
+    } else {
+        input
+            .page_updates
+            .into_iter()
+            .filter(|page_update| !is_valid_page_update(page_update, &rule_map))
+            .map(|page_update| find_center_of_page_update(&page_update, &rule_map))
+            .sum()
     }
 }
 

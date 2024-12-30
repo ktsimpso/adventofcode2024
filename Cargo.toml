@@ -1,7 +1,10 @@
 [package]
 name = "adventofcode2024"
-version = "0.25.0"
+version = "1.0.0"
 edition = "2021"
+
+[workspace]
+members = ["adventofcode-core", "adventofcode-macro"]
 
 [profile.release]
 incremental = true
@@ -19,6 +22,7 @@ telemetry = ["minitrace"]
 memory-analysis = ["dhat", "size", "telemetry"]
 
 [dependencies]
+adventofcode-macro = { version = "0.1.0", path = "adventofcode-macro" }
 ahash = "0.8.11"
 anyhow = "1.0.93"
 ariadne = "0.3.0"

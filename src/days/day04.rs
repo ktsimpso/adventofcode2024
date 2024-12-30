@@ -4,6 +4,7 @@ use crate::libs::{
     parse::{parse_table2, StringParse},
     problem::Problem,
 };
+use adventofcode_macro::problem_day;
 use chumsky::{error::Rich, extra, prelude::one_of, Parser};
 use clap::{Args, ValueEnum};
 use itertools::Itertools;
@@ -53,30 +54,25 @@ pub struct CommandLineArguments {
     search_setting: SearchSetting,
 }
 
-pub struct Day04 {}
+#[problem_day(Day04)]
+fn run(input: Input, arguments: &CommandLineArguments) -> usize {
+    let (max_x, max_y) = BoundedPoint::maxes_from_table(&input.0);
 
-impl Problem<Input, CommandLineArguments> for Day04 {
-    type Output = usize;
-
-    fn run(input: Input, arguments: &CommandLineArguments) -> Self::Output {
-        let (max_x, max_y) = BoundedPoint::maxes_from_table(&input.0);
-
-        match arguments.search_setting {
-            SearchSetting::Xmas => input
-                .0
-                .indexed_iter()
-                .filter(|(_, value)| **value == 'X')
-                .map(|(index, _)| BoundedPoint::from_table_index(index, max_x, max_y))
-                .map(|point| number_of_xmas_from_point(&point, &input.0))
-                .sum(),
-            SearchSetting::MasInX => input
-                .0
-                .indexed_iter()
-                .filter(|(_, value)| **value == 'A')
-                .map(|(index, _)| BoundedPoint::from_table_index(index, max_x, max_y))
-                .filter(|point| is_mas_from_point(point, &input.0))
-                .count(),
-        }
+    match arguments.search_setting {
+        SearchSetting::Xmas => input
+            .0
+            .indexed_iter()
+            .filter(|(_, value)| **value == 'X')
+            .map(|(index, _)| BoundedPoint::from_table_index(index, max_x, max_y))
+            .map(|point| number_of_xmas_from_point(&point, &input.0))
+            .sum(),
+        SearchSetting::MasInX => input
+            .0
+            .indexed_iter()
+            .filter(|(_, value)| **value == 'A')
+            .map(|(index, _)| BoundedPoint::from_table_index(index, max_x, max_y))
+            .filter(|point| is_mas_from_point(point, &input.0))
+            .count(),
     }
 }
 

@@ -3,6 +3,7 @@ use crate::libs::{
     parse::{parse_usize, StringParse},
     problem::{Problem, ProblemResult},
 };
+use adventofcode_macro::problem_day;
 use ahash::AHashMap;
 use chumsky::{
     error::Rich,
@@ -124,79 +125,72 @@ pub struct CommandLineArguments {
     program_execution: ProgramExecution,
 }
 
-pub struct Day17 {}
+#[problem_day(Day17)]
+fn run(mut input: Input, arguments: &CommandLineArguments) -> ProblemResult {
+    match arguments.program_execution {
+        ProgramExecution::Run => run_program(&mut input).into(),
+        ProgramExecution::FindQuine => {
+            let valid_bit_patterns: AHashMap<usize, Vec<usize>> = (0..1024)
+                .map(|i| {
+                    input.a = i;
+                    input.b = 0;
+                    input.c = 0;
 
-impl Problem<Input, CommandLineArguments> for Day17 {
-    type Output = ProblemResult;
+                    (run_program_with_first_out(&mut input), i)
+                })
+                .fold(AHashMap::new(), |mut acc, (key, pattern)| {
+                    let patterns = acc.entry(key).or_default();
+                    patterns.push(pattern);
+                    acc
+                });
 
-    fn run(mut input: Input, arguments: &CommandLineArguments) -> Self::Output {
-        match arguments.program_execution {
-            ProgramExecution::Run => run_program(&mut input).into(),
-            ProgramExecution::FindQuine => {
-                let valid_bit_patterns: AHashMap<usize, Vec<usize>> = (0..1024)
-                    .map(|i| {
-                        input.a = i;
-                        input.b = 0;
-                        input.c = 0;
+            let shift = 3;
+            let mask = 0b_0000_0111_1111;
 
-                        (run_program_with_first_out(&mut input), i)
-                    })
-                    .fold(AHashMap::new(), |mut acc, (key, pattern)| {
-                        let patterns = acc.entry(key).or_default();
-                        patterns.push(pattern);
-                        acc
-                    });
+            let mut to_find: VecDeque<usize> = input
+                .program
+                .iter()
+                .flat_map(|(operator, operand)| once(operator.get_numeral()).chain(once(*operand)))
+                .collect::<VecDeque<_>>();
 
-                let shift = 3;
-                let mask = 0b_0000_0111_1111;
+            let target_string = to_find.iter().map(|value| value.to_string()).join(",");
 
-                let mut to_find: VecDeque<usize> = input
-                    .program
+            let mut previous_patterns = valid_bit_patterns
+                .get(&to_find.pop_front().expect("exists"))
+                .expect("exists")
+                .clone();
+
+            let mut i = 1;
+
+            while let Some(next) = to_find.pop_front() {
+                let patterns = valid_bit_patterns.get(&next).expect("exists");
+                previous_patterns = previous_patterns
                     .iter()
-                    .flat_map(|(operator, operand)| {
-                        once(operator.get_numeral()).chain(once(*operand))
+                    .flat_map(|previous_pattern| {
+                        let shifted = previous_pattern >> (shift * i);
+
+                        patterns
+                            .iter()
+                            .filter(|pattern| (**pattern & mask) == shifted)
+                            .map(|pattern| (pattern << (shift * i)) | previous_pattern)
+                            .collect::<Vec<_>>()
                     })
-                    .collect::<VecDeque<_>>();
+                    .collect();
 
-                let target_string = to_find.iter().map(|value| value.to_string()).join(",");
-
-                let mut previous_patterns = valid_bit_patterns
-                    .get(&to_find.pop_front().expect("exists"))
-                    .expect("exists")
-                    .clone();
-
-                let mut i = 1;
-
-                while let Some(next) = to_find.pop_front() {
-                    let patterns = valid_bit_patterns.get(&next).expect("exists");
-                    previous_patterns = previous_patterns
-                        .iter()
-                        .flat_map(|previous_pattern| {
-                            let shifted = previous_pattern >> (shift * i);
-
-                            patterns
-                                .iter()
-                                .filter(|pattern| (**pattern & mask) == shifted)
-                                .map(|pattern| (pattern << (shift * i)) | previous_pattern)
-                                .collect::<Vec<_>>()
-                        })
-                        .collect();
-
-                    i += 1;
-                }
-
-                (*previous_patterns
-                    .tap_mut(|patterns| patterns.sort())
-                    .iter()
-                    .find(|a_value| {
-                        input.a = **a_value;
-                        input.b = 0;
-                        input.c = 0;
-                        run_program(&mut input) == target_string
-                    })
-                    .expect("Exists"))
-                .into()
+                i += 1;
             }
+
+            (*previous_patterns
+                .tap_mut(|patterns| patterns.sort())
+                .iter()
+                .find(|a_value| {
+                    input.a = **a_value;
+                    input.b = 0;
+                    input.c = 0;
+                    run_program(&mut input) == target_string
+                })
+                .expect("Exists"))
+            .into()
         }
     }
 }

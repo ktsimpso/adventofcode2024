@@ -3,6 +3,7 @@ use crate::libs::{
     parse::{parse_lines, parse_usize, StringParse},
     problem::Problem,
 };
+use adventofcode_macro::problem_day;
 use ahash::AHashMap;
 use chumsky::{error::Rich, extra, prelude::just, Parser};
 use clap::{Args, ValueEnum};
@@ -52,29 +53,24 @@ pub struct CommandLineArguments {
     interpretation: ListInterpretation,
 }
 
-pub struct Day01 {}
+#[problem_day(Day01)]
+fn run(input: Input, arguments: &CommandLineArguments) -> usize {
+    let (mut left, mut right) = input.0.into_iter().fold(
+        (Vec::new(), Vec::new()),
+        |(mut left_list, mut right_list), (left, right)| {
+            left_list.push(left);
+            right_list.push(right);
+            (left_list, right_list)
+        },
+    );
 
-impl Problem<Input, CommandLineArguments> for Day01 {
-    type Output = usize;
-
-    fn run(input: Input, arguments: &CommandLineArguments) -> Self::Output {
-        let (mut left, mut right) = input.0.into_iter().fold(
-            (Vec::new(), Vec::new()),
-            |(mut left_list, mut right_list), (left, right)| {
-                left_list.push(left);
-                right_list.push(right);
-                (left_list, right_list)
-            },
-        );
-
-        match arguments.interpretation {
-            ListInterpretation::Difference => {
-                left.sort();
-                right.sort();
-                compare_relative_values(left, right)
-            }
-            ListInterpretation::Similarity => similarity_score(left, right),
+    match arguments.interpretation {
+        ListInterpretation::Difference => {
+            left.sort();
+            right.sort();
+            compare_relative_values(left, right)
         }
+        ListInterpretation::Similarity => similarity_score(left, right),
     }
 }
 

@@ -3,6 +3,7 @@ use crate::libs::{
     parse::{parse_between_blank_lines, parse_isize, StringParse},
     problem::Problem,
 };
+use adventofcode_macro::problem_day;
 use chumsky::{error::Rich, extra, prelude::just, Parser};
 use clap::Args;
 use std::sync::LazyLock;
@@ -76,27 +77,22 @@ pub struct CommandLineArguments {
     offset: isize,
 }
 
-pub struct Day13 {}
-
 const OFFSET: isize = 10_000_000_000_000;
 
-impl Problem<Input, CommandLineArguments> for Day13 {
-    type Output = isize;
-
-    fn run(input: Input, arguments: &CommandLineArguments) -> Self::Output {
-        input
-            .0
-            .into_iter()
-            .flat_map(|game| {
-                calculate_game_cost(
-                    &game.a,
-                    &game.b,
-                    game.prize.0 + arguments.offset,
-                    game.prize.1 + arguments.offset,
-                )
-            })
-            .sum()
-    }
+#[problem_day(Day13)]
+fn run(input: Input, arguments: &CommandLineArguments) -> isize {
+    input
+        .0
+        .into_iter()
+        .flat_map(|game| {
+            calculate_game_cost(
+                &game.a,
+                &game.b,
+                game.prize.0 + arguments.offset,
+                game.prize.1 + arguments.offset,
+            )
+        })
+        .sum()
 }
 
 fn calculate_game_cost(a: &Button, b: &Button, tx: isize, ty: isize) -> Option<isize> {

@@ -4,6 +4,7 @@ use crate::libs::{
     parse::StringParse,
     problem::Problem,
 };
+use adventofcode_macro::problem_day;
 use chumsky::{
     error::Rich,
     extra,
@@ -114,41 +115,36 @@ pub struct CommandLineArguments {
     wide: bool,
 }
 
-pub struct Day15 {}
+#[problem_day(Day15)]
+fn run(mut input: Input, arguments: &CommandLineArguments) -> usize {
+    if arguments.wide {
+        let mut wide_warehouse = widen_warehouse(&input.warehouse);
 
-impl Problem<Input, CommandLineArguments> for Day15 {
-    type Output = usize;
+        let (max_x, max_y) = BoundedPoint::maxes_from_table(&wide_warehouse);
+        let mut robot_position = wide_warehouse
+            .indexed_iter()
+            .find(|(_, floor)| matches!(floor, WarehouseFloor::Robot))
+            .map(|(index, _)| BoundedPoint::from_table_index(index, max_x, max_y))
+            .expect("One robot exists");
 
-    fn run(mut input: Input, arguments: &CommandLineArguments) -> Self::Output {
-        if arguments.wide {
-            let mut wide_warehouse = widen_warehouse(&input.warehouse);
+        input.movements.into_iter().for_each(|movement| {
+            robot_position = move_direction_wide(robot_position, movement, &mut wide_warehouse);
+        });
+        gps_score(&wide_warehouse)
+    } else {
+        let (max_x, max_y) = BoundedPoint::maxes_from_table(&input.warehouse);
+        let mut robot_position = input
+            .warehouse
+            .indexed_iter()
+            .find(|(_, floor)| matches!(floor, WarehouseFloor::Robot))
+            .map(|(index, _)| BoundedPoint::from_table_index(index, max_x, max_y))
+            .expect("One robot exists");
 
-            let (max_x, max_y) = BoundedPoint::maxes_from_table(&wide_warehouse);
-            let mut robot_position = wide_warehouse
-                .indexed_iter()
-                .find(|(_, floor)| matches!(floor, WarehouseFloor::Robot))
-                .map(|(index, _)| BoundedPoint::from_table_index(index, max_x, max_y))
-                .expect("One robot exists");
+        input.movements.into_iter().for_each(|movement| {
+            robot_position = move_direction(robot_position, movement, &mut input.warehouse);
+        });
 
-            input.movements.into_iter().for_each(|movement| {
-                robot_position = move_direction_wide(robot_position, movement, &mut wide_warehouse);
-            });
-            gps_score(&wide_warehouse)
-        } else {
-            let (max_x, max_y) = BoundedPoint::maxes_from_table(&input.warehouse);
-            let mut robot_position = input
-                .warehouse
-                .indexed_iter()
-                .find(|(_, floor)| matches!(floor, WarehouseFloor::Robot))
-                .map(|(index, _)| BoundedPoint::from_table_index(index, max_x, max_y))
-                .expect("One robot exists");
-
-            input.movements.into_iter().for_each(|movement| {
-                robot_position = move_direction(robot_position, movement, &mut input.warehouse);
-            });
-
-            gps_score(&input.warehouse)
-        }
+        gps_score(&input.warehouse)
     }
 }
 

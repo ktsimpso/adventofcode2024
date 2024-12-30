@@ -3,6 +3,7 @@ use crate::libs::{
     parse::{parse_lines, parse_usize, StringParse},
     problem::Problem,
 };
+use adventofcode_macro::problem_day;
 use chumsky::{error::Rich, extra, Parser};
 use clap::{Args, ValueEnum};
 use itertools::{iterate, Itertools};
@@ -56,39 +57,29 @@ pub struct CommandLineArguments {
     banana_market_information: BananaMarketInformation,
 }
 
-pub struct Day22 {}
-
-impl Problem<Input, CommandLineArguments> for Day22 {
-    type Output = usize;
-
-    fn run(input: Input, arguments: &CommandLineArguments) -> Self::Output {
-        match arguments.banana_market_information {
-            BananaMarketInformation::LastSecret => input
-                .0
-                .into_iter()
-                .flat_map(|number| iterate(number, |number| next_secret(*number)).nth(2000))
-                .sum(),
-            BananaMarketInformation::MostBananas => input
-                .0
-                .into_iter()
-                .enumerate()
-                .fold(
-                    (vec![0_u16; 1_048_576], vec![0_u16; 1_048_576]),
-                    |mut acc, (index, number)| {
-                        price_by_last_four_deltas(
-                            number,
-                            (index + 1) as u16,
-                            &mut acc.0,
-                            &mut acc.1,
-                        );
-                        acc
-                    },
-                )
-                .0
-                .into_iter()
-                .max()
-                .unwrap_or(0) as usize,
-        }
+#[problem_day(Day22)]
+fn run(input: Input, arguments: &CommandLineArguments) -> usize {
+    match arguments.banana_market_information {
+        BananaMarketInformation::LastSecret => input
+            .0
+            .into_iter()
+            .flat_map(|number| iterate(number, |number| next_secret(*number)).nth(2000))
+            .sum(),
+        BananaMarketInformation::MostBananas => input
+            .0
+            .into_iter()
+            .enumerate()
+            .fold(
+                (vec![0_u16; 1_048_576], vec![0_u16; 1_048_576]),
+                |mut acc, (index, number)| {
+                    price_by_last_four_deltas(number, (index + 1) as u16, &mut acc.0, &mut acc.1);
+                    acc
+                },
+            )
+            .0
+            .into_iter()
+            .max()
+            .unwrap_or(0) as usize,
     }
 }
 

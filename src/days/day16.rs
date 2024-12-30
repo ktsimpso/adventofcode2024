@@ -4,6 +4,7 @@ use crate::libs::{
     parse::{parse_table2, StringParse},
     problem::Problem,
 };
+use adventofcode_macro::problem_day;
 use ahash::AHashSet;
 use chumsky::{
     error::Rich,
@@ -73,27 +74,20 @@ pub struct CommandLineArguments {
     path_stat: PathStat,
 }
 
-pub struct Day16 {}
+#[problem_day(Day16)]
+fn run(input: Input, arguments: &CommandLineArguments) -> usize {
+    let (max_x, max_y) = BoundedPoint::maxes_from_table(&input.0);
 
-impl Problem<Input, CommandLineArguments> for Day16 {
-    type Output = usize;
+    let start = input
+        .0
+        .indexed_iter()
+        .find(|(_, item)| matches!(item, Maze::Start))
+        .map(|(index, _)| BoundedPoint::from_table_index(index, max_x, max_y))
+        .expect("Exists");
 
-    fn run(input: Input, arguments: &CommandLineArguments) -> Self::Output {
-        let (max_x, max_y) = BoundedPoint::maxes_from_table(&input.0);
-
-        let start = input
-            .0
-            .indexed_iter()
-            .find(|(_, item)| matches!(item, Maze::Start))
-            .map(|(index, _)| BoundedPoint::from_table_index(index, max_x, max_y))
-            .expect("Exists");
-
-        match arguments.path_stat {
-            PathStat::ShortestWeight => {
-                find_shortest_path_weight(&start, &input.0).expect("Exists")
-            }
-            PathStat::TotalSeats => find_all_shortest_paths(&start, &input.0).expect("Exists"),
-        }
+    match arguments.path_stat {
+        PathStat::ShortestWeight => find_shortest_path_weight(&start, &input.0).expect("Exists"),
+        PathStat::TotalSeats => find_all_shortest_paths(&start, &input.0).expect("Exists"),
     }
 }
 

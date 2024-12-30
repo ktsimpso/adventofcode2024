@@ -3,6 +3,7 @@ use crate::libs::{
     parse::{parse_usize, StringParse},
     problem::Problem,
 };
+use adventofcode_macro::problem_day;
 use chumsky::{
     error::Rich,
     extra,
@@ -77,37 +78,32 @@ pub struct CommandLineArguments {
     full_instruction_set: bool,
 }
 
-pub struct Day03 {}
+#[problem_day(Day03)]
+fn run(input: Input, arguments: &CommandLineArguments) -> usize {
+    let mut do_ = true;
 
-impl Problem<Input, CommandLineArguments> for Day03 {
-    type Output = usize;
-
-    fn run(input: Input, arguments: &CommandLineArguments) -> Self::Output {
-        let mut do_ = true;
-
-        input
-            .0
-            .into_iter()
-            .map(|i| match i {
-                Instruction::Multiply(x, y) => {
-                    if do_ {
-                        x * y
-                    } else {
-                        0
-                    }
-                }
-                Instruction::Garbage => 0,
-                Instruction::Do => {
-                    do_ = true;
+    input
+        .0
+        .into_iter()
+        .map(|i| match i {
+            Instruction::Multiply(x, y) => {
+                if do_ {
+                    x * y
+                } else {
                     0
                 }
-                Instruction::Dont => {
-                    if arguments.full_instruction_set {
-                        do_ = false;
-                    }
-                    0
+            }
+            Instruction::Garbage => 0,
+            Instruction::Do => {
+                do_ = true;
+                0
+            }
+            Instruction::Dont => {
+                if arguments.full_instruction_set {
+                    do_ = false;
                 }
-            })
-            .sum()
-    }
+                0
+            }
+        })
+        .sum()
 }

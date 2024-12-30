@@ -4,6 +4,7 @@ use crate::libs::{
     parse::{parse_between_blank_lines, StringParse},
     problem::Problem,
 };
+use adventofcode_macro::problem_day;
 use chumsky::{error::Rich, extra, prelude::just, text, IterParser, Parser};
 use clap::Args;
 use itertools::Itertools;
@@ -68,53 +69,48 @@ enum KeyHole {
 #[derive(Args)]
 pub struct CommandLineArguments {}
 
-pub struct Day25 {}
+#[problem_day(Day25)]
+fn run(input: Input, _arguments: &CommandLineArguments) -> usize {
+    let (_, max_y) = BoundedPoint::maxes_from_table(input.0.first().expect("At least 1"));
+    let (keys, locks): (Vec<_>, Vec<_>) = input
+        .0
+        .into_iter()
+        .map(|lock_key| {
+            let is_key = lock_key
+                .first()
+                .is_some_and(|slot| matches!(slot, KeyHole::Open));
+            let counts = lock_key
+                .columns()
+                .into_iter()
+                .flat_map(|column| {
+                    let column_height = column.len();
+                    column
+                        .into_iter()
+                        .chunk_by(|key| (*key).clone())
+                        .into_iter()
+                        .next()
+                        .map(|(_, chunk)| {
+                            if is_key {
+                                column_height - chunk.count() - 1
+                            } else {
+                                chunk.count() - 1
+                            }
+                        })
+                })
+                .collect::<Vec<_>>();
 
-impl Problem<Input, CommandLineArguments> for Day25 {
-    type Output = usize;
+            (is_key, counts)
+        })
+        .partition(|(is_key, _)| *is_key);
 
-    fn run(input: Input, _arguments: &CommandLineArguments) -> Self::Output {
-        let (_, max_y) = BoundedPoint::maxes_from_table(input.0.first().expect("At least 1"));
-        let (keys, locks): (Vec<_>, Vec<_>) = input
-            .0
-            .into_iter()
-            .map(|lock_key| {
-                let is_key = lock_key
-                    .first()
-                    .is_some_and(|slot| matches!(slot, KeyHole::Open));
-                let counts = lock_key
-                    .columns()
-                    .into_iter()
-                    .flat_map(|column| {
-                        let column_height = column.len();
-                        column
-                            .into_iter()
-                            .chunk_by(|key| (*key).clone())
-                            .into_iter()
-                            .next()
-                            .map(|(_, chunk)| {
-                                if is_key {
-                                    column_height - chunk.count() - 1
-                                } else {
-                                    chunk.count() - 1
-                                }
-                            })
-                    })
-                    .collect::<Vec<_>>();
-
-                (is_key, counts)
-            })
-            .partition(|(is_key, _)| *is_key);
-
-        keys.into_iter()
-            .map(|(_, key)| key)
-            .cartesian_product(locks.into_iter().map(|(_, lock)| lock))
-            .filter(|(key, lock)| {
-                key.iter()
-                    .zip(lock)
-                    .map(|(k, l)| k + l)
-                    .all(|size| size < max_y)
-            })
-            .count()
-    }
+    keys.into_iter()
+        .map(|(_, key)| key)
+        .cartesian_product(locks.into_iter().map(|(_, lock)| lock))
+        .filter(|(key, lock)| {
+            key.iter()
+                .zip(lock)
+                .map(|(k, l)| k + l)
+                .all(|size| size < max_y)
+        })
+        .count()
 }

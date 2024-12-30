@@ -3,6 +3,7 @@ use crate::libs::{
     parse::{parse_usize, StringParse},
     problem::Problem,
 };
+use adventofcode_macro::problem_day;
 use ahash::AHashMap;
 use chumsky::{
     error::Rich,
@@ -53,38 +54,33 @@ pub struct CommandLineArguments {
     n: usize,
 }
 
-pub struct Day11 {}
+#[problem_day(Day11)]
+fn run(input: Input, arguments: &CommandLineArguments) -> usize {
+    let mut stones = input.0.into_iter().fold(AHashMap::new(), |mut acc, stone| {
+        *acc.entry(stone).or_insert(0) += 1;
+        acc
+    });
 
-impl Problem<Input, CommandLineArguments> for Day11 {
-    type Output = usize;
-
-    fn run(input: Input, arguments: &CommandLineArguments) -> Self::Output {
-        let mut stones = input.0.into_iter().fold(AHashMap::new(), |mut acc, stone| {
-            *acc.entry(stone).or_insert(0) += 1;
-            acc
-        });
-
-        for _ in 0..arguments.n {
-            stones = stones
-                .into_iter()
-                .flat_map(|(stone, count)| {
-                    if stone == 0 {
-                        vec![(1, count)]
-                    } else if let digits = stone.ilog10() + 1
-                        && digits % 2 == 0
-                    {
-                        let divisor = 10_usize.pow(digits / 2);
-                        vec![(stone / divisor, count), (stone % divisor, count)]
-                    } else {
-                        vec![(stone * 2024, count)]
-                    }
-                })
-                .fold(AHashMap::new(), |mut acc, (stone, count)| {
-                    *acc.entry(stone).or_insert(0) += count;
-                    acc
-                });
-        }
-
-        stones.values().sum()
+    for _ in 0..arguments.n {
+        stones = stones
+            .into_iter()
+            .flat_map(|(stone, count)| {
+                if stone == 0 {
+                    vec![(1, count)]
+                } else if let digits = stone.ilog10() + 1
+                    && digits % 2 == 0
+                {
+                    let divisor = 10_usize.pow(digits / 2);
+                    vec![(stone / divisor, count), (stone % divisor, count)]
+                } else {
+                    vec![(stone * 2024, count)]
+                }
+            })
+            .fold(AHashMap::new(), |mut acc, (stone, count)| {
+                *acc.entry(stone).or_insert(0) += count;
+                acc
+            });
     }
+
+    stones.values().sum()
 }

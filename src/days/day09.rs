@@ -3,6 +3,7 @@ use crate::libs::{
     parse::{parse_digit, StringParse},
     problem::Problem,
 };
+use adventofcode_macro::problem_day;
 use chumsky::{error::Rich, extra, prelude::end, text, IterParser, Parser};
 use clap::{Args, ValueEnum};
 use priority_queue::PriorityQueue;
@@ -85,72 +86,67 @@ pub struct CommandLineArguments {
     compression_strategy: CompressionStrategy,
 }
 
-pub struct Day09 {}
+#[problem_day(Day09)]
+fn run(input: Input, arguments: &CommandLineArguments) -> usize {
+    match arguments.compression_strategy {
+        CompressionStrategy::HighestCompression => {
+            let ids_with_files: Vec<_> = input.0.into_iter().enumerate().collect();
+            let mut left = 0;
+            let mut right = ids_with_files.len() - 1;
+            let mut right_used = 0;
+            let mut left_space_used = 0;
+            let mut file_system = Vec::new();
 
-impl Problem<Input, CommandLineArguments> for Day09 {
-    type Output = usize;
+            while left < right {
+                let (left_file_id, left_disk_section) = &ids_with_files[left];
+                let (right_file_id, right_disk_section) = &ids_with_files[right];
 
-    fn run(input: Input, arguments: &CommandLineArguments) -> Self::Output {
-        match arguments.compression_strategy {
-            CompressionStrategy::HighestCompression => {
-                let ids_with_files: Vec<_> = input.0.into_iter().enumerate().collect();
-                let mut left = 0;
-                let mut right = ids_with_files.len() - 1;
-                let mut right_used = 0;
-                let mut left_space_used = 0;
-                let mut file_system = Vec::new();
-
-                while left < right {
-                    let (left_file_id, left_disk_section) = &ids_with_files[left];
-                    let (right_file_id, right_disk_section) = &ids_with_files[right];
-
-                    if left_space_used == 0 {
-                        file_system.append(&mut vec![left_file_id; left_disk_section.file_length]);
-                    }
-
-                    let right_file_remaining = right_disk_section.file_length - right_used;
-                    let left_space_remaining = left_disk_section.free_length - left_space_used;
-
-                    match right_file_remaining.cmp(&left_space_remaining) {
-                        std::cmp::Ordering::Less => {
-                            file_system.append(&mut vec![right_file_id; right_file_remaining]);
-
-                            left_space_used += right_file_remaining;
-                            right_used = 0;
-                            right -= 1;
-                        }
-                        std::cmp::Ordering::Greater => {
-                            file_system.append(&mut vec![right_file_id; left_space_remaining]);
-
-                            right_used += left_space_remaining;
-                            left_space_used = 0;
-                            left += 1;
-                        }
-                        std::cmp::Ordering::Equal => {
-                            file_system.append(&mut vec![right_file_id; left_space_remaining]);
-
-                            right_used = 0;
-                            left_space_used = 0;
-                            right -= 1;
-                            left += 1;
-                        }
-                    }
+                if left_space_used == 0 {
+                    file_system.append(&mut vec![left_file_id; left_disk_section.file_length]);
                 }
 
-                let (right_file_id, right_disk_section) = &ids_with_files[right];
-                file_system.append(&mut vec![
-                    right_file_id;
-                    right_disk_section.file_length - right_used
-                ]);
+                let right_file_remaining = right_disk_section.file_length - right_used;
+                let left_space_remaining = left_disk_section.free_length - left_space_used;
 
-                file_system
-                    .into_iter()
-                    .enumerate()
-                    .map(|(index, id)| index * id)
-                    .sum()
+                match right_file_remaining.cmp(&left_space_remaining) {
+                    std::cmp::Ordering::Less => {
+                        file_system.append(&mut vec![right_file_id; right_file_remaining]);
+
+                        left_space_used += right_file_remaining;
+                        right_used = 0;
+                        right -= 1;
+                    }
+                    std::cmp::Ordering::Greater => {
+                        file_system.append(&mut vec![right_file_id; left_space_remaining]);
+
+                        right_used += left_space_remaining;
+                        left_space_used = 0;
+                        left += 1;
+                    }
+                    std::cmp::Ordering::Equal => {
+                        file_system.append(&mut vec![right_file_id; left_space_remaining]);
+
+                        right_used = 0;
+                        left_space_used = 0;
+                        right -= 1;
+                        left += 1;
+                    }
+                }
             }
-            CompressionStrategy::FirstAvailableSlot => compress_to_first_avilable_slot(&input.0),
+
+            let (right_file_id, right_disk_section) = &ids_with_files[right];
+            file_system.append(&mut vec![
+                right_file_id;
+                right_disk_section.file_length - right_used
+            ]);
+
+            file_system
+                .into_iter()
+                .enumerate()
+                .map(|(index, id)| index * id)
+                .sum()
         }
+        CompressionStrategy::FirstAvailableSlot => compress_to_first_avilable_slot(&input.0),
     }
 }
 

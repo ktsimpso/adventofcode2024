@@ -7,6 +7,7 @@ use crate::libs::{
     parse::{parse_table2, StringParse},
     problem::Problem,
 };
+use adventofcode_macro::problem_day;
 use ahash::AHashMap;
 use chumsky::{
     error::Rich,
@@ -88,35 +89,30 @@ pub struct CommandLineArguments {
     parallel: bool,
 }
 
-pub struct Day20 {}
+#[problem_day(Day20)]
+fn run(input: Input, arguments: &CommandLineArguments) -> usize {
+    let (max_x, max_y) = BoundedPoint::maxes_from_table(&input.0);
+    let start = input
+        .0
+        .indexed_iter()
+        .find(|(_, tile)| matches!(tile, Track::Start))
+        .map(|(index, _)| BoundedPoint::from_table_index(index, max_x, max_y))
+        .expect("Exists");
+    let end = input
+        .0
+        .indexed_iter()
+        .find(|(_, tile)| matches!(tile, Track::End))
+        .map(|(index, _)| BoundedPoint::from_table_index(index, max_x, max_y))
+        .expect("Exists");
 
-impl Problem<Input, CommandLineArguments> for Day20 {
-    type Output = usize;
-
-    fn run(input: Input, arguments: &CommandLineArguments) -> Self::Output {
-        let (max_x, max_y) = BoundedPoint::maxes_from_table(&input.0);
-        let start = input
-            .0
-            .indexed_iter()
-            .find(|(_, tile)| matches!(tile, Track::Start))
-            .map(|(index, _)| BoundedPoint::from_table_index(index, max_x, max_y))
-            .expect("Exists");
-        let end = input
-            .0
-            .indexed_iter()
-            .find(|(_, tile)| matches!(tile, Track::End))
-            .map(|(index, _)| BoundedPoint::from_table_index(index, max_x, max_y))
-            .expect("Exists");
-
-        let path = shortest_path_full(&start, &end, &input.0);
-        best_shortcuts(
-            &end,
-            arguments.cheat_threshold,
-            arguments.target_savings,
-            &path,
-            arguments.parallel,
-        )
-    }
+    let path = shortest_path_full(&start, &end, &input.0);
+    best_shortcuts(
+        &end,
+        arguments.cheat_threshold,
+        arguments.target_savings,
+        &path,
+        arguments.parallel,
+    )
 }
 
 fn generate_manhattan_quarter_points(distance: usize) -> Vec<(usize, usize)> {
