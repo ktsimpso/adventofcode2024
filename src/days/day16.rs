@@ -41,26 +41,6 @@ pub static DAY_16: LazyLock<CliProblem<Day16, CommandLineArguments, Freeze>> =
         .freeze()
     });
 
-pub struct Day16(Array2<Maze>);
-
-#[problem_parse]
-fn parse<'a>() -> impl Parser<'a, &'a str, Day16, extra::Err<Rich<'a, char>>> {
-    let start = just("S").to(Maze::Start);
-    let end = just("E").to(Maze::End);
-    let open = just(".").to(Maze::Open);
-    let wall = just("#").to(Maze::Wall);
-    let maze = parse_table2(choice((start, end, open, wall)));
-    maze.map(Day16)
-}
-
-#[derive(Debug, Clone)]
-enum Maze {
-    Start,
-    End,
-    Open,
-    Wall,
-}
-
 #[derive(ValueEnum, Clone)]
 enum PathStat {
     ShortestWeight,
@@ -71,6 +51,26 @@ enum PathStat {
 pub struct CommandLineArguments {
     #[arg(short, long, help = "What stat about the maze to calculate")]
     path_stat: PathStat,
+}
+
+#[derive(Debug, Clone)]
+enum Maze {
+    Start,
+    End,
+    Open,
+    Wall,
+}
+
+pub struct Day16(Array2<Maze>);
+
+#[problem_parse]
+fn parse<'a>() -> impl Parser<'a, &'a str, Day16, extra::Err<Rich<'a, char>>> {
+    let start = just("S").to(Maze::Start);
+    let end = just("E").to(Maze::End);
+    let open = just(".").to(Maze::Open);
+    let wall = just("#").to(Maze::Wall);
+    let maze = parse_table2(choice((start, end, open, wall)));
+    maze.map(Day16)
 }
 
 #[problem_day]

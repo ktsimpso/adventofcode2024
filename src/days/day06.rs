@@ -40,6 +40,18 @@ pub static DAY_06: LazyLock<CliProblem<Day06, CommandLineArguments, Freeze>> =
         .freeze()
     });
 
+#[derive(ValueEnum, Clone)]
+enum AvoidenceStrategy {
+    FullPath,
+    Loop,
+}
+
+#[derive(Args)]
+pub struct CommandLineArguments {
+    #[arg(short, long, help = "The interpretation of the lists")]
+    avoidence_strategy: AvoidenceStrategy,
+}
+
 pub struct Day06(Array2<Lab>);
 
 #[derive(Clone)]
@@ -56,18 +68,6 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day06, extra::Err<Rich<'a, char>>> {
     let guard = just("^").to(Lab::Guard);
 
     parse_table2(choice((open, obstruction, guard))).map(Day06)
-}
-
-#[derive(ValueEnum, Clone)]
-enum AvoidenceStrategy {
-    FullPath,
-    Loop,
-}
-
-#[derive(Args)]
-pub struct CommandLineArguments {
-    #[arg(short, long, help = "The interpretation of the lists")]
-    avoidence_strategy: AvoidenceStrategy,
 }
 
 #[problem_day]

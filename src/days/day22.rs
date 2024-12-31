@@ -33,13 +33,6 @@ pub static DAY_22: LazyLock<CliProblem<Day22, CommandLineArguments, Freeze>> =
         .freeze()
     });
 
-pub struct Day22(Vec<usize>);
-
-#[problem_parse]
-fn parse<'a>() -> impl Parser<'a, &'a str, Day22, extra::Err<Rich<'a, char>>> {
-    parse_lines(parse_usize()).map(Day22)
-}
-
 #[derive(ValueEnum, Clone)]
 enum BananaMarketInformation {
     LastSecret,
@@ -54,6 +47,13 @@ pub struct CommandLineArguments {
         help = "The infomration about the banana market you want."
     )]
     banana_market_information: BananaMarketInformation,
+}
+
+pub struct Day22(Vec<usize>);
+
+#[problem_parse]
+fn parse<'a>() -> impl Parser<'a, &'a str, Day22, extra::Err<Rich<'a, char>>> {
+    parse_lines(parse_usize()).map(Day22)
 }
 
 #[problem_day]

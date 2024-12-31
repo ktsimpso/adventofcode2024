@@ -40,6 +40,45 @@ pub static DAY_17: LazyLock<CliProblem<Day17, CommandLineArguments, Freeze>> =
         .freeze()
     });
 
+#[derive(ValueEnum, Clone)]
+enum ProgramExecution {
+    Run,
+    FindQuine,
+}
+
+#[derive(Args)]
+pub struct CommandLineArguments {
+    #[arg(short, long, help = "What to do with the input program.")]
+    program_execution: ProgramExecution,
+}
+
+#[derive(Debug, Clone)]
+enum Instruction {
+    Adv,
+    Bxl,
+    Bst,
+    Jnz,
+    Bxc,
+    Out,
+    Bdv,
+    Cdv,
+}
+
+impl Instruction {
+    fn get_numeral(&self) -> usize {
+        match self {
+            Instruction::Adv => 0,
+            Instruction::Bxl => 1,
+            Instruction::Bst => 2,
+            Instruction::Jnz => 3,
+            Instruction::Bxc => 4,
+            Instruction::Out => 5,
+            Instruction::Bdv => 6,
+            Instruction::Cdv => 7,
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct Day17 {
     a: usize,
@@ -83,45 +122,6 @@ fn parse_instruction<'a>(
     let cdv = just("7").to(Instruction::Cdv);
     let opcode = choice((adv, bxl, bst, jnz, bxc, out, bdv, cdv));
     opcode.then_ignore(just(",")).then(parse_usize())
-}
-
-#[derive(Debug, Clone)]
-enum Instruction {
-    Adv,
-    Bxl,
-    Bst,
-    Jnz,
-    Bxc,
-    Out,
-    Bdv,
-    Cdv,
-}
-
-impl Instruction {
-    fn get_numeral(&self) -> usize {
-        match self {
-            Instruction::Adv => 0,
-            Instruction::Bxl => 1,
-            Instruction::Bst => 2,
-            Instruction::Jnz => 3,
-            Instruction::Bxc => 4,
-            Instruction::Out => 5,
-            Instruction::Bdv => 6,
-            Instruction::Cdv => 7,
-        }
-    }
-}
-
-#[derive(ValueEnum, Clone)]
-enum ProgramExecution {
-    Run,
-    FindQuine,
-}
-
-#[derive(Args)]
-pub struct CommandLineArguments {
-    #[arg(short, long, help = "What to do with the input program.")]
-    program_execution: ProgramExecution,
 }
 
 #[problem_day]

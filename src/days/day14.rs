@@ -40,33 +40,6 @@ pub static DAY_14: LazyLock<CliProblem<Day14, CommandLineArguments, Freeze>> =
         .freeze()
     });
 
-#[derive(Debug)]
-struct Robot {
-    position: (isize, isize),
-    horiztonal_velocity: isize,
-    vertical_velocity: isize,
-}
-
-pub struct Day14(Vec<Robot>);
-
-#[problem_parse]
-fn parse<'a>() -> impl Parser<'a, &'a str, Day14, extra::Err<Rich<'a, char>>> {
-    let robot = just("p=")
-        .ignore_then(parse_isize())
-        .then_ignore(just(","))
-        .then(parse_isize())
-        .then_ignore(just(" v="))
-        .then(parse_isize())
-        .then_ignore(just(","))
-        .then(parse_isize())
-        .map(|(((x, y), dx), dy)| Robot {
-            position: (x, y),
-            horiztonal_velocity: dx,
-            vertical_velocity: dy,
-        });
-    parse_lines(robot).map(Day14)
-}
-
 enum RobotStat {
     SafetyFactor(usize),
     FindTree(bool),
@@ -120,6 +93,33 @@ impl CliArgs for CommandLineArguments {
             },
         }
     }
+}
+
+#[derive(Debug)]
+struct Robot {
+    position: (isize, isize),
+    horiztonal_velocity: isize,
+    vertical_velocity: isize,
+}
+
+pub struct Day14(Vec<Robot>);
+
+#[problem_parse]
+fn parse<'a>() -> impl Parser<'a, &'a str, Day14, extra::Err<Rich<'a, char>>> {
+    let robot = just("p=")
+        .ignore_then(parse_isize())
+        .then_ignore(just(","))
+        .then(parse_isize())
+        .then_ignore(just(" v="))
+        .then(parse_isize())
+        .then_ignore(just(","))
+        .then(parse_isize())
+        .map(|(((x, y), dx), dy)| Robot {
+            position: (x, y),
+            horiztonal_velocity: dx,
+            vertical_velocity: dy,
+        });
+    parse_lines(robot).map(Day14)
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]

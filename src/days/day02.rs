@@ -34,17 +34,17 @@ pub static DAY_02: LazyLock<CliProblem<Day02, CommandLineArguments, Freeze>> =
         .freeze()
     });
 
+#[derive(Args)]
+pub struct CommandLineArguments {
+    #[arg(short, long, help = "Whether to apply error correction to the report")]
+    error_correction: bool,
+}
+
 pub struct Day02(Vec<Vec<usize>>);
 
 #[problem_parse]
 fn parse<'a>() -> impl Parser<'a, &'a str, Day02, extra::Err<Rich<'a, char>>> {
     parse_lines(parse_usize().separated_by(just(" ")).at_least(1).collect()).map(Day02)
-}
-
-#[derive(Args)]
-pub struct CommandLineArguments {
-    #[arg(short, long, help = "Whether to apply error correction to the report")]
-    error_correction: bool,
 }
 
 #[problem_day]

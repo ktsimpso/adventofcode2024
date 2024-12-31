@@ -33,13 +33,6 @@ pub static DAY_01: LazyLock<CliProblem<Day01, CommandLineArguments, Freeze>> =
         .freeze()
     });
 
-pub struct Day01(Vec<(usize, usize)>);
-
-#[problem_parse]
-fn parse<'a>() -> impl Parser<'a, &'a str, Day01, extra::Err<Rich<'a, char>>> {
-    parse_lines(parse_usize().then_ignore(just("   ")).then(parse_usize())).map(Day01)
-}
-
 #[derive(ValueEnum, Clone)]
 enum ListInterpretation {
     Difference,
@@ -50,6 +43,13 @@ enum ListInterpretation {
 pub struct CommandLineArguments {
     #[arg(short, long, help = "The interpretation of the lists")]
     interpretation: ListInterpretation,
+}
+
+pub struct Day01(Vec<(usize, usize)>);
+
+#[problem_parse]
+fn parse<'a>() -> impl Parser<'a, &'a str, Day01, extra::Err<Rich<'a, char>>> {
+    parse_lines(parse_usize().then_ignore(just("   ")).then(parse_usize())).map(Day01)
 }
 
 #[problem_day]

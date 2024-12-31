@@ -35,13 +35,6 @@ pub static DAY_04: LazyLock<CliProblem<Day04, CommandLineArguments, Freeze>> =
         .freeze()
     });
 
-pub struct Day04(Array2<char>);
-
-#[problem_parse]
-fn parse<'a>() -> impl Parser<'a, &'a str, Day04, extra::Err<Rich<'a, char>>> {
-    parse_table2(one_of("XMAS")).map(Day04)
-}
-
 #[derive(ValueEnum, Clone)]
 enum SearchSetting {
     Xmas,
@@ -51,6 +44,13 @@ enum SearchSetting {
 #[derive(Args)]
 pub struct CommandLineArguments {
     search_setting: SearchSetting,
+}
+
+pub struct Day04(Array2<char>);
+
+#[problem_parse]
+fn parse<'a>() -> impl Parser<'a, &'a str, Day04, extra::Err<Rich<'a, char>>> {
+    parse_table2(one_of("XMAS")).map(Day04)
 }
 
 #[problem_day]

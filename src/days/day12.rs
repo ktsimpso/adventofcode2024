@@ -43,13 +43,6 @@ pub static DAY_12: LazyLock<CliProblem<Day12, CommandLineArguments, Freeze>> =
         .freeze()
     });
 
-pub struct Day12(Array2<char>);
-
-#[problem_parse]
-fn parse<'a>() -> impl Parser<'a, &'a str, Day12, extra::Err<Rich<'a, char>>> {
-    parse_table2(one_of('A'..='Z')).map(Day12)
-}
-
 #[derive(ValueEnum, Clone)]
 enum FenceScore {
     Perimeter,
@@ -60,6 +53,13 @@ enum FenceScore {
 pub struct CommandLineArguments {
     #[arg(short, long, help = "How to score the fence prices for a region")]
     fence_score: FenceScore,
+}
+
+pub struct Day12(Array2<char>);
+
+#[problem_parse]
+fn parse<'a>() -> impl Parser<'a, &'a str, Day12, extra::Err<Rich<'a, char>>> {
+    parse_table2(one_of('A'..='Z')).map(Day12)
 }
 
 #[problem_day]

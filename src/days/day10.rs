@@ -35,13 +35,6 @@ pub static DAY_10: LazyLock<CliProblem<Day10, CommandLineArguments, Freeze>> =
         .freeze()
     });
 
-pub struct Day10(Array2<u32>);
-
-#[problem_parse]
-fn parse<'a>() -> impl Parser<'a, &'a str, Day10, extra::Err<Rich<'a, char>>> {
-    parse_table2(parse_digit().map(|c| c.to_digit(10).expect("Works"))).map(Day10)
-}
-
 #[derive(ValueEnum, Clone)]
 enum ScoringSystem {
     UniquePeaks,
@@ -52,6 +45,13 @@ enum ScoringSystem {
 pub struct CommandLineArguments {
     #[arg(short, long, help = "Way to score a trail head")]
     scoring: ScoringSystem,
+}
+
+pub struct Day10(Array2<u32>);
+
+#[problem_parse]
+fn parse<'a>() -> impl Parser<'a, &'a str, Day10, extra::Err<Rich<'a, char>>> {
+    parse_table2(parse_digit().map(|c| c.to_digit(10).expect("Works"))).map(Day10)
 }
 
 #[problem_day]

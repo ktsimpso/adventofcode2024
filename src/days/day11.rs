@@ -34,6 +34,12 @@ pub static DAY_11: LazyLock<CliProblem<Day11, CommandLineArguments, Freeze>> =
         .freeze()
     });
 
+#[derive(Args)]
+pub struct CommandLineArguments {
+    #[arg(short, long, help = "Number of times to blink")]
+    n: usize,
+}
+
 pub struct Day11(Vec<usize>);
 
 #[problem_parse]
@@ -45,12 +51,6 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day11, extra::Err<Rich<'a, char>>> {
         .then_ignore(text::newline())
         .then_ignore(end())
         .map(Day11)
-}
-
-#[derive(Args)]
-pub struct CommandLineArguments {
-    #[arg(short, long, help = "Number of times to blink")]
-    n: usize,
 }
 
 #[problem_day]

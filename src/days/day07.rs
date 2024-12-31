@@ -33,6 +33,19 @@ pub static DAY_07: LazyLock<CliProblem<Day07, CommandLineArguments, Freeze>> = L
     },
 );
 
+#[derive(Args)]
+pub struct CommandLineArguments {
+    #[arg(short, long, num_args = 1..3, value_delimiter = ' ', required = true, help = "The list of operators to test")]
+    operators: Vec<Operator>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash, ValueEnum)]
+enum Operator {
+    Add,
+    Multiply,
+    Concat,
+}
+
 struct TestInput {
     result: usize,
     test_values: Vec<usize>,
@@ -52,19 +65,6 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day07, extra::Err<Rich<'a, char>>> {
                 test_values,
             });
     parse_lines(test_input).map(Day07)
-}
-
-#[derive(Args)]
-pub struct CommandLineArguments {
-    #[arg(short, long, num_args = 1..3, value_delimiter = ' ', required = true, help = "The list of operators to test")]
-    operators: Vec<Operator>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Hash, ValueEnum)]
-enum Operator {
-    Add,
-    Multiply,
-    Concat,
 }
 
 #[problem_day]

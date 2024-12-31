@@ -29,6 +29,12 @@ pub static DAY_13: LazyLock<CliProblem<Day13, CommandLineArguments, Freeze>> = L
     },
 );
 
+#[derive(Args)]
+pub struct CommandLineArguments {
+    #[arg(short, long, help = "The offset to the prize's position")]
+    offset: isize,
+}
+
 pub struct Day13(Vec<Game>);
 
 #[derive(Debug)]
@@ -68,12 +74,6 @@ fn parse_button<'a>() -> impl Parser<'a, &'a str, Button, extra::Err<Rich<'a, ch
         .then_ignore(just(", Y+"))
         .then(parse_isize())
         .map(|(dx, dy)| Button { dx, dy })
-}
-
-#[derive(Args)]
-pub struct CommandLineArguments {
-    #[arg(short, long, help = "The offset to the prize's position")]
-    offset: isize,
 }
 
 const OFFSET: isize = 10_000_000_000_000;

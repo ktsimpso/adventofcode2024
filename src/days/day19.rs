@@ -39,6 +39,22 @@ pub static DAY_19: LazyLock<CliProblem<Day19, CommandLineArguments, Freeze>> = L
     },
 );
 
+#[derive(ValueEnum, Clone)]
+enum TowelOptions {
+    TowelPossible,
+    NumberOfWaysPossible,
+}
+
+#[derive(Args)]
+pub struct CommandLineArguments {
+    #[arg(
+        short,
+        long,
+        help = "Whether to count only if the configuration is possible, or all valid configurations."
+    )]
+    towel_options: TowelOptions,
+}
+
 #[derive(Debug)]
 pub struct Day19 {
     available_towels: Vec<Vec<Color>>,
@@ -78,22 +94,6 @@ fn parse_towel_color<'a>() -> impl Parser<'a, &'a str, Vec<Color>, extra::Err<Ri
     let green = just("g").to(Color::Green);
     let colors = choice((white, blue, black, red, green));
     colors.repeated().at_least(1).collect::<Vec<_>>()
-}
-
-#[derive(ValueEnum, Clone)]
-enum TowelOptions {
-    TowelPossible,
-    NumberOfWaysPossible,
-}
-
-#[derive(Args)]
-pub struct CommandLineArguments {
-    #[arg(
-        short,
-        long,
-        help = "Whether to count only if the configuration is possible, or all valid configurations."
-    )]
-    towel_options: TowelOptions,
 }
 
 #[problem_day]

@@ -26,6 +26,15 @@ pub static DAY_25: LazyLock<CliProblem<Day25, CommandLineArguments, Freeze>> =
         .freeze()
     });
 
+#[derive(Args)]
+pub struct CommandLineArguments {}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum KeyHole {
+    Blocked,
+    Open,
+}
+
 pub struct Day25(Vec<Array2<KeyHole>>);
 
 #[problem_parse]
@@ -58,15 +67,6 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day25, extra::Err<Rich<'a, char>>> {
 
     parse_between_blank_lines(lock_key).map(Day25)
 }
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-enum KeyHole {
-    Blocked,
-    Open,
-}
-
-#[derive(Args)]
-pub struct CommandLineArguments {}
 
 #[problem_day]
 fn run(input: Day25, _arguments: &CommandLineArguments) -> usize {

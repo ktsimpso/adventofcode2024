@@ -43,6 +43,33 @@ pub static DAY_24: LazyLock<CliProblem<Day24, CommandLineArguments, Freeze>> = L
     },
 );
 
+#[derive(ValueEnum, Clone)]
+enum WireTask {
+    Simulate,
+    FixAdder,
+}
+
+#[derive(Args)]
+pub struct CommandLineArguments {
+    #[arg(short, long, help = "What to do with the wires")]
+    wire_task: WireTask,
+}
+
+#[derive(Debug, Clone)]
+struct Gate {
+    operand1: String,
+    operand2: String,
+    result: String,
+    gate_type: GateType,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum GateType {
+    And,
+    Or,
+    Xor,
+}
+
 #[derive(Debug)]
 pub struct Day24 {
     gate_values: Vec<(String, bool)>,
@@ -86,33 +113,6 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day24, extra::Err<Rich<'a, char>>> {
         .then_ignore(text::newline().repeated().at_least(1))
         .then(gates)
         .map(|(gate_values, gates)| Day24 { gate_values, gates })
-}
-
-#[derive(Debug, Clone)]
-struct Gate {
-    operand1: String,
-    operand2: String,
-    result: String,
-    gate_type: GateType,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-enum GateType {
-    And,
-    Or,
-    Xor,
-}
-
-#[derive(ValueEnum, Clone)]
-enum WireTask {
-    Simulate,
-    FixAdder,
-}
-
-#[derive(Args)]
-pub struct CommandLineArguments {
-    #[arg(short, long, help = "What to do with the wires")]
-    wire_task: WireTask,
 }
 
 #[problem_day]

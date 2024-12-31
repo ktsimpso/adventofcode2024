@@ -41,18 +41,6 @@ pub static DAY_08: LazyLock<CliProblem<Day08, CommandLineArguments, Freeze>> =
         .freeze()
     });
 
-pub struct Day08(Array2<Dish>);
-
-#[problem_parse]
-fn parse<'a>() -> impl Parser<'a, &'a str, Day08, extra::Err<Rich<'a, char>>> {
-    let empty = just(".").to(Dish::Empty);
-    let antena = any()
-        .and_is(just(".").not())
-        .and_is(text::newline().not())
-        .map(Dish::Antena);
-    parse_table2(empty.or(antena)).map(Day08)
-}
-
 #[derive(ValueEnum, Clone)]
 enum Resonance {
     Discrete,
@@ -73,6 +61,18 @@ pub struct CommandLineArguments {
 enum Dish {
     Empty,
     Antena(char),
+}
+
+pub struct Day08(Array2<Dish>);
+
+#[problem_parse]
+fn parse<'a>() -> impl Parser<'a, &'a str, Day08, extra::Err<Rich<'a, char>>> {
+    let empty = just(".").to(Dish::Empty);
+    let antena = any()
+        .and_is(just(".").not())
+        .and_is(text::newline().not())
+        .map(Dish::Antena);
+    parse_table2(empty.or(antena)).map(Day08)
 }
 
 #[problem_day]

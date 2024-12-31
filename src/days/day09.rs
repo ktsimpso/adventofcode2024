@@ -39,7 +39,25 @@ pub static DAY_09: LazyLock<CliProblem<Day09, CommandLineArguments, Freeze>> =
         .freeze()
     });
 
+#[derive(ValueEnum, Clone)]
+enum CompressionStrategy {
+    HighestCompression,
+    FirstAvailableSlot,
+}
+
+#[derive(Args)]
+pub struct CommandLineArguments {
+    #[arg(short, long, help = "Strategy to reformat the memory")]
+    compression_strategy: CompressionStrategy,
+}
+
 pub struct Day09(Vec<DiskSection>);
+
+#[derive(Debug)]
+struct DiskSection {
+    file_length: usize,
+    free_length: usize,
+}
 
 #[problem_parse]
 fn parse<'a>() -> impl Parser<'a, &'a str, Day09, extra::Err<Rich<'a, char>>> {
@@ -59,30 +77,6 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day09, extra::Err<Rich<'a, char>>> {
         .collect()
         .then_ignore(end())
         .map(Day09)
-}
-
-#[derive(Debug)]
-struct DiskSection {
-    file_length: usize,
-    free_length: usize,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-enum Data {
-    FileData(usize),
-    Free,
-}
-
-#[derive(ValueEnum, Clone)]
-enum CompressionStrategy {
-    HighestCompression,
-    FirstAvailableSlot,
-}
-
-#[derive(Args)]
-pub struct CommandLineArguments {
-    #[arg(short, long, help = "Strategy to reformat the memory")]
-    compression_strategy: CompressionStrategy,
 }
 
 #[problem_day]
@@ -147,6 +141,12 @@ fn run(input: Day09, arguments: &CommandLineArguments) -> usize {
         }
         CompressionStrategy::FirstAvailableSlot => compress_to_first_avilable_slot(&input.0),
     }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum Data {
+    FileData(usize),
+    Free,
 }
 
 #[derive(Debug)]

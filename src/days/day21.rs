@@ -35,6 +35,16 @@ pub static DAY_21: LazyLock<CliProblem<Day21, CommandLineArguments, Freeze>> =
         .freeze()
     });
 
+#[derive(Args)]
+pub struct CommandLineArguments {
+    #[arg(
+        short,
+        long,
+        help = "The number of robots between you and the final robot"
+    )]
+    n: usize,
+}
+
 pub struct Day21(Vec<Vec<Code>>);
 
 #[problem_parse]
@@ -373,15 +383,6 @@ impl Keypad {
     }
 }
 
-#[derive(Args)]
-pub struct CommandLineArguments {
-    #[arg(
-        short,
-        long,
-        help = "The number of robots between you and the final robot"
-    )]
-    n: usize,
-}
 #[problem_day]
 fn run(input: Day21, arguments: &CommandLineArguments) -> usize {
     input

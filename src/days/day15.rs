@@ -36,6 +36,12 @@ pub static DAY_15: LazyLock<CliProblem<Day15, CommandLineArguments, Freeze>> =
         .freeze()
     });
 
+#[derive(Args)]
+pub struct CommandLineArguments {
+    #[arg(short, long, help = "If the warehouse is wide or not")]
+    wide: bool,
+}
+
 #[derive(Debug)]
 pub struct Day15 {
     warehouse: Array2<WarehouseFloor>,
@@ -106,12 +112,6 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day15, extra::Err<Rich<'a, char>>> {
         })
         .then_ignore(text::newline().or_not())
         .then_ignore(end())
-}
-
-#[derive(Args)]
-pub struct CommandLineArguments {
-    #[arg(short, long, help = "If the warehouse is wide or not")]
-    wide: bool,
 }
 
 #[problem_day]

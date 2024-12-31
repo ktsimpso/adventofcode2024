@@ -34,7 +34,21 @@ pub static DAY_03: LazyLock<CliProblem<Day03, CommandLineArguments, Freeze>> = L
     },
 );
 
+#[derive(Args)]
+pub struct CommandLineArguments {
+    #[arg(short, long, help = "Use the full instruction set or not")]
+    full_instruction_set: bool,
+}
+
 pub struct Day03(Vec<Instruction>);
+
+#[derive(Debug, Clone)]
+enum Instruction {
+    Multiply(usize, usize),
+    Do,
+    Dont,
+    Garbage,
+}
 
 #[problem_parse]
 fn parse<'a>() -> impl Parser<'a, &'a str, Day03, extra::Err<Rich<'a, char>>> {
@@ -61,20 +75,6 @@ fn parse_mul<'a>() -> impl Parser<'a, &'a str, Instruction, extra::Err<Rich<'a, 
         .then(parse_usize())
         .then_ignore(just(")"))
         .map(|(a, b)| Instruction::Multiply(a, b))
-}
-
-#[derive(Debug, Clone)]
-enum Instruction {
-    Multiply(usize, usize),
-    Do,
-    Dont,
-    Garbage,
-}
-
-#[derive(Args)]
-pub struct CommandLineArguments {
-    #[arg(short, long, help = "Use the full instruction set or not")]
-    full_instruction_set: bool,
 }
 
 #[problem_day]

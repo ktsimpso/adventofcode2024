@@ -48,26 +48,6 @@ pub static DAY_20: LazyLock<CliProblem<Day20, CommandLineArguments, Freeze>> =
         .freeze()
     });
 
-pub struct Day20(Array2<Track>);
-
-#[problem_parse]
-fn parse<'a>() -> impl Parser<'a, &'a str, Day20, extra::Err<Rich<'a, char>>> {
-    let start = just("S").to(Track::Start);
-    let end = just("E").to(Track::End);
-    let open = just(".").to(Track::Open);
-    let wall = just("#").to(Track::Wall);
-    let maze = parse_table2(choice((start, end, open, wall)));
-    maze.map(Day20)
-}
-
-#[derive(Debug, Clone)]
-enum Track {
-    Start,
-    End,
-    Open,
-    Wall,
-}
-
 #[derive(Args)]
 pub struct CommandLineArguments {
     #[arg(
@@ -86,6 +66,26 @@ pub struct CommandLineArguments {
         help = "Whether to run the cheat detection in parallel or not."
     )]
     parallel: bool,
+}
+
+#[derive(Debug, Clone)]
+enum Track {
+    Start,
+    End,
+    Open,
+    Wall,
+}
+
+pub struct Day20(Array2<Track>);
+
+#[problem_parse]
+fn parse<'a>() -> impl Parser<'a, &'a str, Day20, extra::Err<Rich<'a, char>>> {
+    let start = just("S").to(Track::Start);
+    let end = just("E").to(Track::End);
+    let open = just(".").to(Track::Open);
+    let wall = just("#").to(Track::Wall);
+    let maze = parse_table2(choice((start, end, open, wall)));
+    maze.map(Day20)
 }
 
 #[problem_day]

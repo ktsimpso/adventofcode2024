@@ -38,13 +38,6 @@ pub static DAY_18: LazyLock<CliProblem<Day18, CommandLineArguments, Freeze>> =
         .freeze()
     });
 
-pub struct Day18(Vec<(usize, usize)>);
-
-#[problem_parse]
-fn parse<'a>() -> impl Parser<'a, &'a str, Day18, extra::Err<Rich<'a, char>>> {
-    parse_lines(parse_usize().then_ignore(just(",")).then(parse_usize())).map(Day18)
-}
-
 enum PathStat {
     ShortestPath(usize),
     FirstBlockage,
@@ -103,6 +96,13 @@ impl CliArgs for CommandLineArguments {
             _ => unreachable!(),
         }
     }
+}
+
+pub struct Day18(Vec<(usize, usize)>);
+
+#[problem_parse]
+fn parse<'a>() -> impl Parser<'a, &'a str, Day18, extra::Err<Rich<'a, char>>> {
+    parse_lines(parse_usize().then_ignore(just(",")).then(parse_usize())).map(Day18)
 }
 
 #[derive(Debug, Clone)]

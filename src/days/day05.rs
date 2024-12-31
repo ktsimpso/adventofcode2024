@@ -34,6 +34,12 @@ pub static DAY_05: LazyLock<CliProblem<Day05, CommandLineArguments, Freeze>> =
         .freeze()
     });
 
+#[derive(Args)]
+pub struct CommandLineArguments {
+    #[arg(short, long, help = "If the updates should be valid or not")]
+    valid: bool,
+}
+
 #[derive(Debug)]
 pub struct Day05 {
     page_rules: Vec<(usize, usize)>,
@@ -65,12 +71,6 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day05, extra::Err<Rich<'a, char>>> {
             page_rules,
             page_updates,
         })
-}
-
-#[derive(Args)]
-pub struct CommandLineArguments {
-    #[arg(short, long, help = "If the updates should be valid or not")]
-    valid: bool,
 }
 
 #[problem_day]

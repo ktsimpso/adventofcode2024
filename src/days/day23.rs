@@ -39,6 +39,18 @@ pub static DAY_23: LazyLock<CliProblem<Day23, CommandLineArguments, Freeze>> =
         .freeze()
     });
 
+#[derive(ValueEnum, Clone)]
+enum ConnectionInformation {
+    MutualTruplesWithT,
+    MostMutualConnections,
+}
+
+#[derive(Args)]
+pub struct CommandLineArguments {
+    #[arg(short, long, help = "The type of connection information desired.")]
+    connection_information: ConnectionInformation,
+}
+
 pub struct Day23(Vec<(String, String)>);
 
 #[problem_parse]
@@ -50,18 +62,6 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day23, extra::Err<Rich<'a, char>>> {
         .map(|(a, b)| format!("{}{}", a, b));
 
     parse_lines(computer.clone().then_ignore(just("-")).then(computer)).map(Day23)
-}
-
-#[derive(ValueEnum, Clone)]
-enum ConnectionInformation {
-    MutualTruplesWithT,
-    MostMutualConnections,
-}
-
-#[derive(Args)]
-pub struct CommandLineArguments {
-    #[arg(short, long, help = "The type of connection information desired.")]
-    connection_information: ConnectionInformation,
 }
 
 #[problem_day]
