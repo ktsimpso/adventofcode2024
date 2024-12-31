@@ -3,7 +3,7 @@ use crate::libs::{
     parse::{parse_usize, StringParse},
     problem::Problem,
 };
-use adventofcode_macro::problem_day;
+use adventofcode_macro::{problem_day, problem_parse};
 use ahash::{AHashMap, AHashSet};
 use chumsky::{
     error::Rich,
@@ -40,32 +40,31 @@ pub struct Day05 {
     page_updates: Vec<Vec<usize>>,
 }
 
-impl StringParse for Day05 {
-    fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
-        let page_rules = parse_usize()
-            .then_ignore(just("|"))
-            .then(parse_usize())
-            .separated_by(text::newline())
-            .at_least(1)
-            .collect();
-        let page_updates = parse_usize()
-            .separated_by(just(","))
-            .at_least(1)
-            .collect()
-            .separated_by(text::newline())
-            .at_least(1)
-            .collect();
+#[problem_parse]
+fn parse<'a>() -> impl Parser<'a, &'a str, Day05, extra::Err<Rich<'a, char>>> {
+    let page_rules = parse_usize()
+        .then_ignore(just("|"))
+        .then(parse_usize())
+        .separated_by(text::newline())
+        .at_least(1)
+        .collect();
+    let page_updates = parse_usize()
+        .separated_by(just(","))
+        .at_least(1)
+        .collect()
+        .separated_by(text::newline())
+        .at_least(1)
+        .collect();
 
-        page_rules
-            .then_ignore(text::newline().repeated().at_least(1))
-            .then(page_updates)
-            .then_ignore(text::newline().repeated())
-            .then_ignore(end())
-            .map(|(page_rules, page_updates)| Day05 {
-                page_rules,
-                page_updates,
-            })
-    }
+    page_rules
+        .then_ignore(text::newline().repeated().at_least(1))
+        .then(page_updates)
+        .then_ignore(text::newline().repeated())
+        .then_ignore(end())
+        .map(|(page_rules, page_updates)| Day05 {
+            page_rules,
+            page_updates,
+        })
 }
 
 #[derive(Args)]

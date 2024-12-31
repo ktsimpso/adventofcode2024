@@ -4,7 +4,7 @@ use crate::libs::{
     parse::{parse_table2, StringParse},
     problem::Problem,
 };
-use adventofcode_macro::problem_day;
+use adventofcode_macro::{problem_day, problem_parse};
 use chumsky::{
     error::Rich,
     extra,
@@ -49,14 +49,13 @@ enum Lab {
     Guard,
 }
 
-impl StringParse for Day06 {
-    fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
-        let open = just(".").to(Lab::Open);
-        let obstruction = just("#").to(Lab::Obstruction);
-        let guard = just("^").to(Lab::Guard);
+#[problem_parse]
+fn parse<'a>() -> impl Parser<'a, &'a str, Day06, extra::Err<Rich<'a, char>>> {
+    let open = just(".").to(Lab::Open);
+    let obstruction = just("#").to(Lab::Obstruction);
+    let guard = just("^").to(Lab::Guard);
 
-        parse_table2(choice((open, obstruction, guard))).map(Day06)
-    }
+    parse_table2(choice((open, obstruction, guard))).map(Day06)
 }
 
 #[derive(ValueEnum, Clone)]

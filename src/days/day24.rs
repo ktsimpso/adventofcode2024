@@ -3,7 +3,7 @@ use crate::libs::{
     parse::{parse_alphanumeric, parse_lines, StringParse},
     problem::{Problem, ProblemResult},
 };
-use adventofcode_macro::problem_day;
+use adventofcode_macro::{problem_day, problem_parse};
 use ahash::{AHashMap, AHashSet};
 use chumsky::{
     error::Rich,
@@ -49,44 +49,43 @@ pub struct Day24 {
     gates: Vec<Gate>,
 }
 
-impl StringParse for Day24 {
-    fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
-        let bool = just("1").to(true).or(just("0").to(false));
-        let gate_value = parse_alphanumeric()
-            .map(|s: &'a str| s.to_string())
-            .then_ignore(just(": "))
-            .then(bool);
-        let gate_values = gate_value
-            .separated_by(text::newline())
-            .at_least(1)
-            .collect::<Vec<_>>();
+#[problem_parse]
+fn parse<'a>() -> impl Parser<'a, &'a str, Day24, extra::Err<Rich<'a, char>>> {
+    let bool = just("1").to(true).or(just("0").to(false));
+    let gate_value = parse_alphanumeric()
+        .map(|s: &'a str| s.to_string())
+        .then_ignore(just(": "))
+        .then(bool);
+    let gate_values = gate_value
+        .separated_by(text::newline())
+        .at_least(1)
+        .collect::<Vec<_>>();
 
-        let and = just("AND").to(GateType::And);
-        let or = just("OR").to(GateType::Or);
-        let xor = just("XOR").to(GateType::Xor);
-        let gate_type = choice((and, or, xor));
+    let and = just("AND").to(GateType::And);
+    let or = just("OR").to(GateType::Or);
+    let xor = just("XOR").to(GateType::Xor);
+    let gate_type = choice((and, or, xor));
 
-        let gate = parse_alphanumeric()
-            .map(|s: &'a str| s.to_string())
-            .then_ignore(just(" "))
-            .then(gate_type)
-            .then_ignore(just(" "))
-            .then(parse_alphanumeric().map(|s: &'a str| s.to_string()))
-            .then_ignore(just(" -> "))
-            .then(parse_alphanumeric().map(|s: &'a str| s.to_string()))
-            .map(|(((operand1, gate_type), operand2), result)| Gate {
-                operand1,
-                operand2,
-                result,
-                gate_type,
-            });
-        let gates = parse_lines(gate);
+    let gate = parse_alphanumeric()
+        .map(|s: &'a str| s.to_string())
+        .then_ignore(just(" "))
+        .then(gate_type)
+        .then_ignore(just(" "))
+        .then(parse_alphanumeric().map(|s: &'a str| s.to_string()))
+        .then_ignore(just(" -> "))
+        .then(parse_alphanumeric().map(|s: &'a str| s.to_string()))
+        .map(|(((operand1, gate_type), operand2), result)| Gate {
+            operand1,
+            operand2,
+            result,
+            gate_type,
+        });
+    let gates = parse_lines(gate);
 
-        gate_values
-            .then_ignore(text::newline().repeated().at_least(1))
-            .then(gates)
-            .map(|(gate_values, gates)| Day24 { gate_values, gates })
-    }
+    gate_values
+        .then_ignore(text::newline().repeated().at_least(1))
+        .then(gates)
+        .map(|(gate_values, gates)| Day24 { gate_values, gates })
 }
 
 #[derive(Debug, Clone)]

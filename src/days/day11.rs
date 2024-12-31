@@ -3,7 +3,7 @@ use crate::libs::{
     parse::{parse_usize, StringParse},
     problem::Problem,
 };
-use adventofcode_macro::problem_day;
+use adventofcode_macro::{problem_day, problem_parse};
 use ahash::AHashMap;
 use chumsky::{
     error::Rich,
@@ -36,16 +36,15 @@ pub static DAY_11: LazyLock<CliProblem<Day11, CommandLineArguments, Freeze>> =
 
 pub struct Day11(Vec<usize>);
 
-impl StringParse for Day11 {
-    fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
-        parse_usize()
-            .separated_by(just(" "))
-            .at_least(1)
-            .collect()
-            .then_ignore(text::newline())
-            .then_ignore(end())
-            .map(Day11)
-    }
+#[problem_parse]
+fn parse<'a>() -> impl Parser<'a, &'a str, Day11, extra::Err<Rich<'a, char>>> {
+    parse_usize()
+        .separated_by(just(" "))
+        .at_least(1)
+        .collect()
+        .then_ignore(text::newline())
+        .then_ignore(end())
+        .map(Day11)
 }
 
 #[derive(Args)]

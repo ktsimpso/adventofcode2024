@@ -7,7 +7,7 @@ use crate::libs::{
     parse::{parse_table2, StringParse},
     problem::Problem,
 };
-use adventofcode_macro::problem_day;
+use adventofcode_macro::{problem_day, problem_parse};
 use ahash::AHashMap;
 use chumsky::{
     error::Rich,
@@ -50,15 +50,14 @@ pub static DAY_20: LazyLock<CliProblem<Day20, CommandLineArguments, Freeze>> =
 
 pub struct Day20(Array2<Track>);
 
-impl StringParse for Day20 {
-    fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
-        let start = just("S").to(Track::Start);
-        let end = just("E").to(Track::End);
-        let open = just(".").to(Track::Open);
-        let wall = just("#").to(Track::Wall);
-        let maze = parse_table2(choice((start, end, open, wall)));
-        maze.map(Day20)
-    }
+#[problem_parse]
+fn parse<'a>() -> impl Parser<'a, &'a str, Day20, extra::Err<Rich<'a, char>>> {
+    let start = just("S").to(Track::Start);
+    let end = just("E").to(Track::End);
+    let open = just(".").to(Track::Open);
+    let wall = just("#").to(Track::Wall);
+    let maze = parse_table2(choice((start, end, open, wall)));
+    maze.map(Day20)
 }
 
 #[derive(Debug, Clone)]

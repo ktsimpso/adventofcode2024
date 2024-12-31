@@ -3,7 +3,7 @@ use crate::libs::{
     parse::{parse_lines, StringParse},
     problem::Problem,
 };
-use adventofcode_macro::problem_day;
+use adventofcode_macro::{problem_day, problem_parse};
 use ahash::AHashMap;
 use chumsky::{
     error::Rich,
@@ -54,21 +54,20 @@ enum Color {
     Green,
 }
 
-impl StringParse for Day19 {
-    fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
-        let available_towels = parse_towel_color()
-            .separated_by(just(", "))
-            .at_least(1)
-            .collect();
+#[problem_parse]
+fn parse<'a>() -> impl Parser<'a, &'a str, Day19, extra::Err<Rich<'a, char>>> {
+    let available_towels = parse_towel_color()
+        .separated_by(just(", "))
+        .at_least(1)
+        .collect();
 
-        available_towels
-            .then_ignore(text::newline().repeated().at_least(1))
-            .then(parse_lines(parse_towel_color()))
-            .map(|(available_towels, target_towels)| Day19 {
-                available_towels,
-                target_towels,
-            })
-    }
+    available_towels
+        .then_ignore(text::newline().repeated().at_least(1))
+        .then(parse_lines(parse_towel_color()))
+        .map(|(available_towels, target_towels)| Day19 {
+            available_towels,
+            target_towels,
+        })
 }
 
 fn parse_towel_color<'a>() -> impl Parser<'a, &'a str, Vec<Color>, extra::Err<Rich<'a, char>>> {

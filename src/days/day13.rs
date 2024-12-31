@@ -3,7 +3,7 @@ use crate::libs::{
     parse::{parse_between_blank_lines, parse_isize, StringParse},
     problem::Problem,
 };
-use adventofcode_macro::problem_day;
+use adventofcode_macro::{problem_day, problem_parse};
 use chumsky::{error::Rich, extra, prelude::just, Parser};
 use clap::Args;
 use std::sync::LazyLock;
@@ -44,23 +44,22 @@ struct Button {
     dy: isize,
 }
 
-impl StringParse for Day13 {
-    fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
-        let game = just("Button A: ")
-            .ignore_then(parse_button())
-            .then_ignore(just("\nButton B: "))
-            .then(parse_button())
-            .then_ignore(just("\nPrize: X="))
-            .then(parse_isize())
-            .then_ignore(just(", Y="))
-            .then(parse_isize())
-            .map(|(((a, b), c), d)| Game {
-                a,
-                b,
-                prize: (c, d),
-            });
-        parse_between_blank_lines(game).map(Day13)
-    }
+#[problem_parse]
+fn parse<'a>() -> impl Parser<'a, &'a str, Day13, extra::Err<Rich<'a, char>>> {
+    let game = just("Button A: ")
+        .ignore_then(parse_button())
+        .then_ignore(just("\nButton B: "))
+        .then(parse_button())
+        .then_ignore(just("\nPrize: X="))
+        .then(parse_isize())
+        .then_ignore(just(", Y="))
+        .then(parse_isize())
+        .map(|(((a, b), c), d)| Game {
+            a,
+            b,
+            prize: (c, d),
+        });
+    parse_between_blank_lines(game).map(Day13)
 }
 
 fn parse_button<'a>() -> impl Parser<'a, &'a str, Button, extra::Err<Rich<'a, char>>> {

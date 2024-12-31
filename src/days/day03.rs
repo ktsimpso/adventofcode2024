@@ -3,7 +3,7 @@ use crate::libs::{
     parse::{parse_usize, StringParse},
     problem::Problem,
 };
-use adventofcode_macro::problem_day;
+use adventofcode_macro::{problem_day, problem_parse};
 use chumsky::{
     error::Rich,
     extra,
@@ -36,23 +36,22 @@ pub static DAY_03: LazyLock<CliProblem<Day03, CommandLineArguments, Freeze>> = L
 
 pub struct Day03(Vec<Instruction>);
 
-impl StringParse for Day03 {
-    fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
-        let do_ = just("do()").to(Instruction::Do);
-        let dont = just("don't()").to(Instruction::Dont);
-        let garbage = any()
-            .and_is(choice((parse_mul(), do_.clone(), dont.clone())).not())
-            .repeated()
-            .at_least(1)
-            .to(Instruction::Garbage);
+#[problem_parse]
+fn parse<'a>() -> impl Parser<'a, &'a str, Day03, extra::Err<Rich<'a, char>>> {
+    let do_ = just("do()").to(Instruction::Do);
+    let dont = just("don't()").to(Instruction::Dont);
+    let garbage = any()
+        .and_is(choice((parse_mul(), do_.clone(), dont.clone())).not())
+        .repeated()
+        .at_least(1)
+        .to(Instruction::Garbage);
 
-        choice((parse_mul(), do_, dont, garbage))
-            .repeated()
-            .at_least(1)
-            .collect::<Vec<_>>()
-            .then_ignore(end())
-            .map(Day03)
-    }
+    choice((parse_mul(), do_, dont, garbage))
+        .repeated()
+        .at_least(1)
+        .collect::<Vec<_>>()
+        .then_ignore(end())
+        .map(Day03)
 }
 
 fn parse_mul<'a>() -> impl Parser<'a, &'a str, Instruction, extra::Err<Rich<'a, char>>> {

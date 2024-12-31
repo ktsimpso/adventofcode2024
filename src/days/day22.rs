@@ -3,7 +3,7 @@ use crate::libs::{
     parse::{parse_lines, parse_usize, StringParse},
     problem::Problem,
 };
-use adventofcode_macro::problem_day;
+use adventofcode_macro::{problem_day, problem_parse};
 use chumsky::{error::Rich, extra, Parser};
 use clap::{Args, ValueEnum};
 use itertools::{iterate, Itertools};
@@ -35,10 +35,9 @@ pub static DAY_22: LazyLock<CliProblem<Day22, CommandLineArguments, Freeze>> =
 
 pub struct Day22(Vec<usize>);
 
-impl StringParse for Day22 {
-    fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
-        parse_lines(parse_usize()).map(Day22)
-    }
+#[problem_parse]
+fn parse<'a>() -> impl Parser<'a, &'a str, Day22, extra::Err<Rich<'a, char>>> {
+    parse_lines(parse_usize()).map(Day22)
 }
 
 #[derive(ValueEnum, Clone)]

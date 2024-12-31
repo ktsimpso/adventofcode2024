@@ -3,7 +3,7 @@ use crate::libs::{
     parse::{parse_usize, StringParse},
     problem::{Problem, ProblemResult},
 };
-use adventofcode_macro::problem_day;
+use adventofcode_macro::{problem_day, problem_parse};
 use ahash::AHashMap;
 use chumsky::{
     error::Rich,
@@ -48,28 +48,27 @@ pub struct Day17 {
     program: Vec<(Instruction, usize)>,
 }
 
-impl StringParse for Day17 {
-    fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
-        let program = parse_instruction()
-            .separated_by(just(","))
-            .at_least(1)
-            .collect::<Vec<_>>();
+#[problem_parse]
+fn parse<'a>() -> impl Parser<'a, &'a str, Day17, extra::Err<Rich<'a, char>>> {
+    let program = parse_instruction()
+        .separated_by(just(","))
+        .at_least(1)
+        .collect::<Vec<_>>();
 
-        just("Register A: ")
-            .ignore_then(parse_usize())
-            .then_ignore(text::newline())
-            .then_ignore(just("Register B: "))
-            .then(parse_usize())
-            .then_ignore(text::newline())
-            .then_ignore(just("Register C: "))
-            .then(parse_usize())
-            .then_ignore(text::newline().repeated().at_least(1))
-            .then_ignore(just("Program: "))
-            .then(program)
-            .then_ignore(text::newline())
-            .then_ignore(end())
-            .map(|(((a, b), c), program)| Day17 { a, b, c, program })
-    }
+    just("Register A: ")
+        .ignore_then(parse_usize())
+        .then_ignore(text::newline())
+        .then_ignore(just("Register B: "))
+        .then(parse_usize())
+        .then_ignore(text::newline())
+        .then_ignore(just("Register C: "))
+        .then(parse_usize())
+        .then_ignore(text::newline().repeated().at_least(1))
+        .then_ignore(just("Program: "))
+        .then(program)
+        .then_ignore(text::newline())
+        .then_ignore(end())
+        .map(|(((a, b), c), program)| Day17 { a, b, c, program })
 }
 
 fn parse_instruction<'a>(

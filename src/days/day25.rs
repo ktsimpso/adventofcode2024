@@ -4,7 +4,7 @@ use crate::libs::{
     parse::{parse_between_blank_lines, StringParse},
     problem::Problem,
 };
-use adventofcode_macro::problem_day;
+use adventofcode_macro::{problem_day, problem_parse};
 use chumsky::{error::Rich, extra, prelude::just, text, IterParser, Parser};
 use clap::Args;
 use itertools::Itertools;
@@ -28,36 +28,35 @@ pub static DAY_25: LazyLock<CliProblem<Day25, CommandLineArguments, Freeze>> =
 
 pub struct Day25(Vec<Array2<KeyHole>>);
 
-impl StringParse for Day25 {
-    fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
-        let blocked = just("#").to(KeyHole::Blocked);
-        let open = just(".").to(KeyHole::Open);
-        let key_hole = blocked.or(open);
+#[problem_parse]
+fn parse<'a>() -> impl Parser<'a, &'a str, Day25, extra::Err<Rich<'a, char>>> {
+    let blocked = just("#").to(KeyHole::Blocked);
+    let open = just(".").to(KeyHole::Open);
+    let key_hole = blocked.or(open);
 
-        let lock_key = key_hole
-            .repeated()
-            .at_least(1)
-            .collect::<Vec<_>>()
-            .separated_by(text::newline())
-            .collect::<Vec<_>>()
-            .try_map(|items, span| {
-                let columns = items.first().map_or(0, |row| row.len());
-                let rows = items.len();
+    let lock_key = key_hole
+        .repeated()
+        .at_least(1)
+        .collect::<Vec<_>>()
+        .separated_by(text::newline())
+        .collect::<Vec<_>>()
+        .try_map(|items, span| {
+            let columns = items.first().map_or(0, |row| row.len());
+            let rows = items.len();
 
-                Array2::from_shape_vec(
-                    (rows, columns),
-                    items
-                        .into_iter()
-                        .fold(Vec::with_capacity(rows * columns), |mut acc, row| {
-                            acc.extend(row);
-                            acc
-                        }),
-                )
-                .map_err(|op| Rich::custom(span, op))
-            });
+            Array2::from_shape_vec(
+                (rows, columns),
+                items
+                    .into_iter()
+                    .fold(Vec::with_capacity(rows * columns), |mut acc, row| {
+                        acc.extend(row);
+                        acc
+                    }),
+            )
+            .map_err(|op| Rich::custom(span, op))
+        });
 
-        parse_between_blank_lines(lock_key).map(Day25)
-    }
+    parse_between_blank_lines(lock_key).map(Day25)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

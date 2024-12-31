@@ -3,7 +3,7 @@ use crate::libs::{
     parse::{parse_isize, parse_lines, StringParse},
     problem::Problem,
 };
-use adventofcode_macro::problem_day;
+use adventofcode_macro::{problem_day, problem_parse};
 use ahash::AHashMap;
 use chumsky::{error::Rich, extra, prelude::just, Parser};
 use clap::value_parser;
@@ -49,23 +49,22 @@ struct Robot {
 
 pub struct Day14(Vec<Robot>);
 
-impl StringParse for Day14 {
-    fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
-        let robot = just("p=")
-            .ignore_then(parse_isize())
-            .then_ignore(just(","))
-            .then(parse_isize())
-            .then_ignore(just(" v="))
-            .then(parse_isize())
-            .then_ignore(just(","))
-            .then(parse_isize())
-            .map(|(((x, y), dx), dy)| Robot {
-                position: (x, y),
-                horiztonal_velocity: dx,
-                vertical_velocity: dy,
-            });
-        parse_lines(robot).map(Day14)
-    }
+#[problem_parse]
+fn parse<'a>() -> impl Parser<'a, &'a str, Day14, extra::Err<Rich<'a, char>>> {
+    let robot = just("p=")
+        .ignore_then(parse_isize())
+        .then_ignore(just(","))
+        .then(parse_isize())
+        .then_ignore(just(" v="))
+        .then(parse_isize())
+        .then_ignore(just(","))
+        .then(parse_isize())
+        .map(|(((x, y), dx), dy)| Robot {
+            position: (x, y),
+            horiztonal_velocity: dx,
+            vertical_velocity: dy,
+        });
+    parse_lines(robot).map(Day14)
 }
 
 enum RobotStat {

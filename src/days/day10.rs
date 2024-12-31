@@ -4,7 +4,7 @@ use crate::libs::{
     parse::{parse_digit, parse_table2, StringParse},
     problem::Problem,
 };
-use adventofcode_macro::problem_day;
+use adventofcode_macro::{problem_day, problem_parse};
 use ahash::{AHashMap, AHashSet};
 use chumsky::{error::Rich, extra, Parser};
 use clap::{Args, ValueEnum};
@@ -37,10 +37,9 @@ pub static DAY_10: LazyLock<CliProblem<Day10, CommandLineArguments, Freeze>> =
 
 pub struct Day10(Array2<u32>);
 
-impl StringParse for Day10 {
-    fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
-        parse_table2(parse_digit().map(|c| c.to_digit(10).expect("Works"))).map(Day10)
-    }
+#[problem_parse]
+fn parse<'a>() -> impl Parser<'a, &'a str, Day10, extra::Err<Rich<'a, char>>> {
+    parse_table2(parse_digit().map(|c| c.to_digit(10).expect("Works"))).map(Day10)
 }
 
 #[derive(ValueEnum, Clone)]

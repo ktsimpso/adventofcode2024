@@ -3,7 +3,7 @@ use crate::libs::{
     parse::{parse_lines, parse_usize, StringParse},
     problem::Problem,
 };
-use adventofcode_macro::problem_day;
+use adventofcode_macro::{problem_day, problem_parse};
 use chumsky::{error::Rich, extra, prelude::just, IterParser, Parser};
 use clap::{Args, ValueEnum};
 use std::sync::LazyLock;
@@ -40,19 +40,18 @@ struct TestInput {
 
 pub struct Day07(Vec<TestInput>);
 
-impl StringParse for Day07 {
-    fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
-        let test_values = parse_usize().separated_by(just(" ")).at_least(1).collect();
-        let test_input =
-            parse_usize()
-                .then_ignore(just(": "))
-                .then(test_values)
-                .map(|(result, test_values)| TestInput {
-                    result,
-                    test_values,
-                });
-        parse_lines(test_input).map(Day07)
-    }
+#[problem_parse]
+fn parse<'a>() -> impl Parser<'a, &'a str, Day07, extra::Err<Rich<'a, char>>> {
+    let test_values = parse_usize().separated_by(just(" ")).at_least(1).collect();
+    let test_input =
+        parse_usize()
+            .then_ignore(just(": "))
+            .then(test_values)
+            .map(|(result, test_values)| TestInput {
+                result,
+                test_values,
+            });
+    parse_lines(test_input).map(Day07)
 }
 
 #[derive(Args)]

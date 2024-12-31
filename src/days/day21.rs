@@ -3,7 +3,7 @@ use crate::libs::{
     parse::{parse_lines, StringParse},
     problem::Problem,
 };
-use adventofcode_macro::problem_day;
+use adventofcode_macro::{problem_day, problem_parse};
 use ahash::AHashMap;
 use chumsky::{
     error::Rich,
@@ -37,25 +37,24 @@ pub static DAY_21: LazyLock<CliProblem<Day21, CommandLineArguments, Freeze>> =
 
 pub struct Day21(Vec<Vec<Code>>);
 
-impl StringParse for Day21 {
-    fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
-        let zero = just("0").to(Code::Zero);
-        let one = just("1").to(Code::One);
-        let two = just("2").to(Code::Two);
-        let three = just("3").to(Code::Three);
-        let four = just("4").to(Code::Four);
-        let five = just("5").to(Code::Five);
-        let six = just("6").to(Code::Six);
-        let seven = just("7").to(Code::Seven);
-        let eight = just("8").to(Code::Eight);
-        let nine = just("9").to(Code::Nine);
-        let activate = just("A").to(Code::Activate);
-        let button = choice((
-            zero, one, two, three, four, five, six, seven, eight, nine, activate,
-        ));
+#[problem_parse]
+fn parse<'a>() -> impl Parser<'a, &'a str, Day21, extra::Err<Rich<'a, char>>> {
+    let zero = just("0").to(Code::Zero);
+    let one = just("1").to(Code::One);
+    let two = just("2").to(Code::Two);
+    let three = just("3").to(Code::Three);
+    let four = just("4").to(Code::Four);
+    let five = just("5").to(Code::Five);
+    let six = just("6").to(Code::Six);
+    let seven = just("7").to(Code::Seven);
+    let eight = just("8").to(Code::Eight);
+    let nine = just("9").to(Code::Nine);
+    let activate = just("A").to(Code::Activate);
+    let button = choice((
+        zero, one, two, three, four, five, six, seven, eight, nine, activate,
+    ));
 
-        parse_lines(button.repeated().at_least(1).collect::<Vec<_>>()).map(Day21)
-    }
+    parse_lines(button.repeated().at_least(1).collect::<Vec<_>>()).map(Day21)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

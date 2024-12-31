@@ -3,7 +3,7 @@ use crate::libs::{
     parse::{parse_lines, parse_usize, StringParse},
     problem::Problem,
 };
-use adventofcode_macro::problem_day;
+use adventofcode_macro::{problem_day, problem_parse};
 use ahash::AHashSet;
 use chumsky::{error::Rich, extra, prelude::just, IterParser, Parser};
 use clap::Args;
@@ -36,10 +36,9 @@ pub static DAY_02: LazyLock<CliProblem<Day02, CommandLineArguments, Freeze>> =
 
 pub struct Day02(Vec<Vec<usize>>);
 
-impl StringParse for Day02 {
-    fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
-        parse_lines(parse_usize().separated_by(just(" ")).at_least(1).collect()).map(Day02)
-    }
+#[problem_parse]
+fn parse<'a>() -> impl Parser<'a, &'a str, Day02, extra::Err<Rich<'a, char>>> {
+    parse_lines(parse_usize().separated_by(just(" ")).at_least(1).collect()).map(Day02)
 }
 
 #[derive(Args)]

@@ -3,7 +3,7 @@ use crate::libs::{
     parse::{parse_digit, StringParse},
     problem::Problem,
 };
-use adventofcode_macro::problem_day;
+use adventofcode_macro::{problem_day, problem_parse};
 use chumsky::{error::Rich, extra, prelude::end, text, IterParser, Parser};
 use clap::{Args, ValueEnum};
 use priority_queue::PriorityQueue;
@@ -41,25 +41,24 @@ pub static DAY_09: LazyLock<CliProblem<Day09, CommandLineArguments, Freeze>> =
 
 pub struct Day09(Vec<DiskSection>);
 
-impl StringParse for Day09 {
-    fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
-        let disk_section = parse_digit()
-            .map(|c| c.to_digit(10).expect("Works"))
-            .then(
-                parse_digit()
-                    .map(|c| c.to_digit(10).expect("Works"))
-                    .or(text::newline().to(0)),
-            )
-            .map(|(file_length, free_length)| DiskSection {
-                file_length: file_length as usize,
-                free_length: free_length as usize,
-            });
-        disk_section
-            .repeated()
-            .collect()
-            .then_ignore(end())
-            .map(Day09)
-    }
+#[problem_parse]
+fn parse<'a>() -> impl Parser<'a, &'a str, Day09, extra::Err<Rich<'a, char>>> {
+    let disk_section = parse_digit()
+        .map(|c| c.to_digit(10).expect("Works"))
+        .then(
+            parse_digit()
+                .map(|c| c.to_digit(10).expect("Works"))
+                .or(text::newline().to(0)),
+        )
+        .map(|(file_length, free_length)| DiskSection {
+            file_length: file_length as usize,
+            free_length: free_length as usize,
+        });
+    disk_section
+        .repeated()
+        .collect()
+        .then_ignore(end())
+        .map(Day09)
 }
 
 #[derive(Debug)]

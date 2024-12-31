@@ -4,7 +4,7 @@ use crate::libs::{
     parse::StringParse,
     problem::Problem,
 };
-use adventofcode_macro::problem_day;
+use adventofcode_macro::{problem_day, problem_parse};
 use chumsky::{
     error::Rich,
     extra,
@@ -51,62 +51,61 @@ enum WarehouseFloor {
     Robot,
 }
 
-impl StringParse for Day15 {
-    fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
-        let wall = just("#").to(WarehouseFloor::Wall);
-        let open = just(".").to(WarehouseFloor::Open);
-        let box_ = just("O").to(WarehouseFloor::LeftBox);
-        let robot = just("@").to(WarehouseFloor::Robot);
-        let warehouse_floor = choice((wall, open, box_, robot));
+#[problem_parse]
+fn parse<'a>() -> impl Parser<'a, &'a str, Day15, extra::Err<Rich<'a, char>>> {
+    let wall = just("#").to(WarehouseFloor::Wall);
+    let open = just(".").to(WarehouseFloor::Open);
+    let box_ = just("O").to(WarehouseFloor::LeftBox);
+    let robot = just("@").to(WarehouseFloor::Robot);
+    let warehouse_floor = choice((wall, open, box_, robot));
 
-        let up = just("^").to(CardinalDirection::Up);
-        let down = just("v").to(CardinalDirection::Down);
-        let left = just("<").to(CardinalDirection::Left);
-        let right = just(">").to(CardinalDirection::Right);
-        let direction = choice((up, down, left, right));
+    let up = just("^").to(CardinalDirection::Up);
+    let down = just("v").to(CardinalDirection::Down);
+    let left = just("<").to(CardinalDirection::Left);
+    let right = just(">").to(CardinalDirection::Right);
+    let direction = choice((up, down, left, right));
 
-        let warehouse = warehouse_floor
-            .repeated()
-            .at_least(1)
-            .collect::<Vec<_>>()
-            .separated_by(text::newline())
-            .collect::<Vec<_>>()
-            .try_map(|items, span| {
-                let columns = items.first().map_or(0, |row| row.len());
-                let rows = items.len();
+    let warehouse = warehouse_floor
+        .repeated()
+        .at_least(1)
+        .collect::<Vec<_>>()
+        .separated_by(text::newline())
+        .collect::<Vec<_>>()
+        .try_map(|items, span| {
+            let columns = items.first().map_or(0, |row| row.len());
+            let rows = items.len();
 
-                Array2::from_shape_vec(
-                    (rows, columns),
-                    items
-                        .into_iter()
-                        .fold(Vec::with_capacity(rows * columns), |mut acc, row| {
-                            acc.extend(row);
-                            acc
-                        }),
-                )
-                .map_err(|op| Rich::custom(span, op))
-            });
+            Array2::from_shape_vec(
+                (rows, columns),
+                items
+                    .into_iter()
+                    .fold(Vec::with_capacity(rows * columns), |mut acc, row| {
+                        acc.extend(row);
+                        acc
+                    }),
+            )
+            .map_err(|op| Rich::custom(span, op))
+        });
 
-        let directions = direction
-            .repeated()
-            .at_least(1)
-            .collect::<Vec<_>>()
-            .then_ignore(text::newline())
-            .repeated()
-            .at_least(1)
-            .collect::<Vec<_>>()
-            .map(|items| items.into_iter().flatten().collect::<Vec<_>>());
+    let directions = direction
+        .repeated()
+        .at_least(1)
+        .collect::<Vec<_>>()
+        .then_ignore(text::newline())
+        .repeated()
+        .at_least(1)
+        .collect::<Vec<_>>()
+        .map(|items| items.into_iter().flatten().collect::<Vec<_>>());
 
-        warehouse
-            .then_ignore(text::newline().repeated().at_least(1))
-            .then(directions)
-            .map(|(warehouse, movements)| Day15 {
-                warehouse,
-                movements,
-            })
-            .then_ignore(text::newline().or_not())
-            .then_ignore(end())
-    }
+    warehouse
+        .then_ignore(text::newline().repeated().at_least(1))
+        .then(directions)
+        .map(|(warehouse, movements)| Day15 {
+            warehouse,
+            movements,
+        })
+        .then_ignore(text::newline().or_not())
+        .then_ignore(end())
 }
 
 #[derive(Args)]
