@@ -15,7 +15,7 @@ use std::{
     sync::LazyLock,
 };
 
-pub static DAY_09: LazyLock<CliProblem<Input, CommandLineArguments, Day09, Freeze>> =
+pub static DAY_09: LazyLock<CliProblem<Day09, CommandLineArguments, Freeze>> =
     LazyLock::new(|| {
         new_cli_problem(
             "day09",
@@ -39,9 +39,9 @@ pub static DAY_09: LazyLock<CliProblem<Input, CommandLineArguments, Day09, Freez
         .freeze()
     });
 
-pub struct Input(Vec<DiskSection>);
+pub struct Day09(Vec<DiskSection>);
 
-impl StringParse for Input {
+impl StringParse for Day09 {
     fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
         let disk_section = parse_digit()
             .map(|c| c.to_digit(10).expect("Works"))
@@ -58,7 +58,7 @@ impl StringParse for Input {
             .repeated()
             .collect()
             .then_ignore(end())
-            .map(Input)
+            .map(Day09)
     }
 }
 
@@ -86,8 +86,8 @@ pub struct CommandLineArguments {
     compression_strategy: CompressionStrategy,
 }
 
-#[problem_day(Day09)]
-fn run(input: Input, arguments: &CommandLineArguments) -> usize {
+#[problem_day]
+fn run(input: Day09, arguments: &CommandLineArguments) -> usize {
     match arguments.compression_strategy {
         CompressionStrategy::HighestCompression => {
             let ids_with_files: Vec<_> = input.0.into_iter().enumerate().collect();

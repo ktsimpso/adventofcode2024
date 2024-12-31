@@ -8,7 +8,7 @@ use chumsky::{error::Rich, extra, prelude::just, IterParser, Parser};
 use clap::{Args, ValueEnum};
 use std::sync::LazyLock;
 
-pub static DAY_07: LazyLock<CliProblem<Input, CommandLineArguments, Day07, Freeze>> = LazyLock::new(
+pub static DAY_07: LazyLock<CliProblem<Day07, CommandLineArguments, Freeze>> = LazyLock::new(
     || {
         new_cli_problem(
             "day07",
@@ -38,9 +38,9 @@ struct TestInput {
     test_values: Vec<usize>,
 }
 
-pub struct Input(Vec<TestInput>);
+pub struct Day07(Vec<TestInput>);
 
-impl StringParse for Input {
+impl StringParse for Day07 {
     fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
         let test_values = parse_usize().separated_by(just(" ")).at_least(1).collect();
         let test_input =
@@ -51,7 +51,7 @@ impl StringParse for Input {
                     result,
                     test_values,
                 });
-        parse_lines(test_input).map(Input)
+        parse_lines(test_input).map(Day07)
     }
 }
 
@@ -68,8 +68,8 @@ enum Operator {
     Concat,
 }
 
-#[problem_day(Day07)]
-fn run(input: Input, arguments: &CommandLineArguments) -> usize {
+#[problem_day]
+fn run(input: Day07, arguments: &CommandLineArguments) -> usize {
     input
         .0
         .into_iter()

@@ -14,7 +14,7 @@ use chumsky::{
 use clap::Args;
 use std::sync::LazyLock;
 
-pub static DAY_11: LazyLock<CliProblem<Input, CommandLineArguments, Day11, Freeze>> =
+pub static DAY_11: LazyLock<CliProblem<Day11, CommandLineArguments, Freeze>> =
     LazyLock::new(|| {
         new_cli_problem(
             "day11",
@@ -34,9 +34,9 @@ pub static DAY_11: LazyLock<CliProblem<Input, CommandLineArguments, Day11, Freez
         .freeze()
     });
 
-pub struct Input(Vec<usize>);
+pub struct Day11(Vec<usize>);
 
-impl StringParse for Input {
+impl StringParse for Day11 {
     fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
         parse_usize()
             .separated_by(just(" "))
@@ -44,7 +44,7 @@ impl StringParse for Input {
             .collect()
             .then_ignore(text::newline())
             .then_ignore(end())
-            .map(Input)
+            .map(Day11)
     }
 }
 
@@ -54,8 +54,8 @@ pub struct CommandLineArguments {
     n: usize,
 }
 
-#[problem_day(Day11)]
-fn run(input: Input, arguments: &CommandLineArguments) -> usize {
+#[problem_day]
+fn run(input: Day11, arguments: &CommandLineArguments) -> usize {
     let mut stones = input.0.into_iter().fold(AHashMap::new(), |mut acc, stone| {
         *acc.entry(stone).or_insert(0) += 1;
         acc

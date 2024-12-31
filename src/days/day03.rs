@@ -13,7 +13,7 @@ use chumsky::{
 use clap::Args;
 use std::sync::LazyLock;
 
-pub static DAY_03: LazyLock<CliProblem<Input, CommandLineArguments, Day03, Freeze>> = LazyLock::new(
+pub static DAY_03: LazyLock<CliProblem<Day03, CommandLineArguments, Freeze>> = LazyLock::new(
     || {
         new_cli_problem(
             "day03",
@@ -34,9 +34,9 @@ pub static DAY_03: LazyLock<CliProblem<Input, CommandLineArguments, Day03, Freez
     },
 );
 
-pub struct Input(Vec<Instruction>);
+pub struct Day03(Vec<Instruction>);
 
-impl StringParse for Input {
+impl StringParse for Day03 {
     fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
         let do_ = just("do()").to(Instruction::Do);
         let dont = just("don't()").to(Instruction::Dont);
@@ -51,7 +51,7 @@ impl StringParse for Input {
             .at_least(1)
             .collect::<Vec<_>>()
             .then_ignore(end())
-            .map(Input)
+            .map(Day03)
     }
 }
 
@@ -78,8 +78,8 @@ pub struct CommandLineArguments {
     full_instruction_set: bool,
 }
 
-#[problem_day(Day03)]
-fn run(input: Input, arguments: &CommandLineArguments) -> usize {
+#[problem_day]
+fn run(input: Day03, arguments: &CommandLineArguments) -> usize {
     let mut do_ = true;
 
     input

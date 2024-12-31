@@ -20,7 +20,7 @@ use ndarray::Array2;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use std::{collections::VecDeque, sync::LazyLock};
 
-pub static DAY_20: LazyLock<CliProblem<Input, CommandLineArguments, Day20, Freeze>> =
+pub static DAY_20: LazyLock<CliProblem<Day20, CommandLineArguments, Freeze>> =
     LazyLock::new(|| {
         new_cli_problem(
             "day20",
@@ -48,16 +48,16 @@ pub static DAY_20: LazyLock<CliProblem<Input, CommandLineArguments, Day20, Freez
         .freeze()
     });
 
-pub struct Input(Array2<Track>);
+pub struct Day20(Array2<Track>);
 
-impl StringParse for Input {
+impl StringParse for Day20 {
     fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
         let start = just("S").to(Track::Start);
         let end = just("E").to(Track::End);
         let open = just(".").to(Track::Open);
         let wall = just("#").to(Track::Wall);
         let maze = parse_table2(choice((start, end, open, wall)));
-        maze.map(Input)
+        maze.map(Day20)
     }
 }
 
@@ -89,8 +89,8 @@ pub struct CommandLineArguments {
     parallel: bool,
 }
 
-#[problem_day(Day20)]
-fn run(input: Input, arguments: &CommandLineArguments) -> usize {
+#[problem_day]
+fn run(input: Day20, arguments: &CommandLineArguments) -> usize {
     let (max_x, max_y) = BoundedPoint::maxes_from_table(&input.0);
     let start = input
         .0

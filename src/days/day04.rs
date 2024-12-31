@@ -11,7 +11,7 @@ use itertools::Itertools;
 use ndarray::Array2;
 use std::sync::LazyLock;
 
-pub static DAY_04: LazyLock<CliProblem<Input, CommandLineArguments, Day04, Freeze>> =
+pub static DAY_04: LazyLock<CliProblem<Day04, CommandLineArguments, Freeze>> =
     LazyLock::new(|| {
         new_cli_problem(
             "day04",
@@ -35,11 +35,11 @@ pub static DAY_04: LazyLock<CliProblem<Input, CommandLineArguments, Day04, Freez
         .freeze()
     });
 
-pub struct Input(Array2<char>);
+pub struct Day04(Array2<char>);
 
-impl StringParse for Input {
+impl StringParse for Day04 {
     fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
-        parse_table2(one_of("XMAS")).map(Input)
+        parse_table2(one_of("XMAS")).map(Day04)
     }
 }
 
@@ -54,8 +54,8 @@ pub struct CommandLineArguments {
     search_setting: SearchSetting,
 }
 
-#[problem_day(Day04)]
-fn run(input: Input, arguments: &CommandLineArguments) -> usize {
+#[problem_day]
+fn run(input: Day04, arguments: &CommandLineArguments) -> usize {
     let (max_x, max_y) = BoundedPoint::maxes_from_table(&input.0);
 
     match arguments.search_setting {

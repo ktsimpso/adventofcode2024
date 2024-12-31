@@ -15,7 +15,7 @@ use clap::{Args, ValueEnum};
 use itertools::Itertools;
 use std::{collections::VecDeque, sync::LazyLock};
 
-pub static DAY_24: LazyLock<CliProblem<Input, CommandLineArguments, Day24, Freeze>> = LazyLock::new(
+pub static DAY_24: LazyLock<CliProblem<Day24, CommandLineArguments, Freeze>> = LazyLock::new(
     || {
         new_cli_problem(
             "day24",
@@ -44,12 +44,12 @@ pub static DAY_24: LazyLock<CliProblem<Input, CommandLineArguments, Day24, Freez
 );
 
 #[derive(Debug)]
-pub struct Input {
+pub struct Day24 {
     gate_values: Vec<(String, bool)>,
     gates: Vec<Gate>,
 }
 
-impl StringParse for Input {
+impl StringParse for Day24 {
     fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
         let bool = just("1").to(true).or(just("0").to(false));
         let gate_value = parse_alphanumeric()
@@ -85,7 +85,7 @@ impl StringParse for Input {
         gate_values
             .then_ignore(text::newline().repeated().at_least(1))
             .then(gates)
-            .map(|(gate_values, gates)| Input { gate_values, gates })
+            .map(|(gate_values, gates)| Day24 { gate_values, gates })
     }
 }
 
@@ -116,8 +116,8 @@ pub struct CommandLineArguments {
     wire_task: WireTask,
 }
 
-#[problem_day(Day24)]
-fn run(input: Input, arguments: &CommandLineArguments) -> ProblemResult {
+#[problem_day]
+fn run(input: Day24, arguments: &CommandLineArguments) -> ProblemResult {
     let gates = input.gates;
 
     match arguments.wire_task {

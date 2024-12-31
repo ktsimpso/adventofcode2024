@@ -14,7 +14,7 @@ use chumsky::{
 use clap::{Args, ValueEnum};
 use std::sync::LazyLock;
 
-pub static DAY_19: LazyLock<CliProblem<Input, CommandLineArguments, Day19, Freeze>> = LazyLock::new(
+pub static DAY_19: LazyLock<CliProblem<Day19, CommandLineArguments, Freeze>> = LazyLock::new(
     || {
         new_cli_problem(
             "day19",
@@ -40,7 +40,7 @@ pub static DAY_19: LazyLock<CliProblem<Input, CommandLineArguments, Day19, Freez
 );
 
 #[derive(Debug)]
-pub struct Input {
+pub struct Day19 {
     available_towels: Vec<Vec<Color>>,
     target_towels: Vec<Vec<Color>>,
 }
@@ -54,7 +54,7 @@ enum Color {
     Green,
 }
 
-impl StringParse for Input {
+impl StringParse for Day19 {
     fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
         let available_towels = parse_towel_color()
             .separated_by(just(", "))
@@ -64,7 +64,7 @@ impl StringParse for Input {
         available_towels
             .then_ignore(text::newline().repeated().at_least(1))
             .then(parse_lines(parse_towel_color()))
-            .map(|(available_towels, target_towels)| Input {
+            .map(|(available_towels, target_towels)| Day19 {
                 available_towels,
                 target_towels,
             })
@@ -97,8 +97,8 @@ pub struct CommandLineArguments {
     towel_options: TowelOptions,
 }
 
-#[problem_day(Day19)]
-fn run(input: Input, arguments: &CommandLineArguments) -> usize {
+#[problem_day]
+fn run(input: Day19, arguments: &CommandLineArguments) -> usize {
     let prefix_map = build_prefix_map(&input.available_towels);
 
     match arguments.towel_options {

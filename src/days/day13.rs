@@ -8,7 +8,7 @@ use chumsky::{error::Rich, extra, prelude::just, Parser};
 use clap::Args;
 use std::sync::LazyLock;
 
-pub static DAY_13: LazyLock<CliProblem<Input, CommandLineArguments, Day13, Freeze>> = LazyLock::new(
+pub static DAY_13: LazyLock<CliProblem<Day13, CommandLineArguments, Freeze>> = LazyLock::new(
     || {
         new_cli_problem(
             "day13",
@@ -29,7 +29,7 @@ pub static DAY_13: LazyLock<CliProblem<Input, CommandLineArguments, Day13, Freez
     },
 );
 
-pub struct Input(Vec<Game>);
+pub struct Day13(Vec<Game>);
 
 #[derive(Debug)]
 struct Game {
@@ -44,7 +44,7 @@ struct Button {
     dy: isize,
 }
 
-impl StringParse for Input {
+impl StringParse for Day13 {
     fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
         let game = just("Button A: ")
             .ignore_then(parse_button())
@@ -59,7 +59,7 @@ impl StringParse for Input {
                 b,
                 prize: (c, d),
             });
-        parse_between_blank_lines(game).map(Input)
+        parse_between_blank_lines(game).map(Day13)
     }
 }
 
@@ -79,8 +79,8 @@ pub struct CommandLineArguments {
 
 const OFFSET: isize = 10_000_000_000_000;
 
-#[problem_day(Day13)]
-fn run(input: Input, arguments: &CommandLineArguments) -> isize {
+#[problem_day]
+fn run(input: Day13, arguments: &CommandLineArguments) -> isize {
     input
         .0
         .into_iter()

@@ -15,7 +15,7 @@ use clap::{Args, ValueEnum};
 use itertools::Itertools;
 use std::sync::LazyLock;
 
-pub static DAY_23: LazyLock<CliProblem<Input, CommandLineArguments, Day23, Freeze>> =
+pub static DAY_23: LazyLock<CliProblem<Day23, CommandLineArguments, Freeze>> =
     LazyLock::new(|| {
         new_cli_problem(
             "day23",
@@ -39,9 +39,9 @@ pub static DAY_23: LazyLock<CliProblem<Input, CommandLineArguments, Day23, Freez
         .freeze()
     });
 
-pub struct Input(Vec<(String, String)>);
+pub struct Day23(Vec<(String, String)>);
 
-impl StringParse for Input {
+impl StringParse for Day23 {
     fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
         let alpha = one_of('a'..='z');
         let computer = alpha
@@ -49,7 +49,7 @@ impl StringParse for Input {
             .then(alpha)
             .map(|(a, b)| format!("{}{}", a, b));
 
-        parse_lines(computer.clone().then_ignore(just("-")).then(computer)).map(Input)
+        parse_lines(computer.clone().then_ignore(just("-")).then(computer)).map(Day23)
     }
 }
 
@@ -65,8 +65,8 @@ pub struct CommandLineArguments {
     connection_information: ConnectionInformation,
 }
 
-#[problem_day(Day23)]
-fn run(input: Input, arguments: &CommandLineArguments) -> ProblemResult {
+#[problem_day]
+fn run(input: Day23, arguments: &CommandLineArguments) -> ProblemResult {
     let computer_to_connections = input.0.into_iter().fold(
         AHashMap::new(),
         |mut acc: AHashMap<String, AHashSet<String>>, (a, b)| {

@@ -16,7 +16,7 @@ use itertools::Itertools;
 use std::{collections::VecDeque, iter::once, sync::LazyLock};
 use tap::Tap;
 
-pub static DAY_17: LazyLock<CliProblem<Input, CommandLineArguments, Day17, Freeze>> =
+pub static DAY_17: LazyLock<CliProblem<Day17, CommandLineArguments, Freeze>> =
     LazyLock::new(|| {
         new_cli_problem(
             "day17",
@@ -41,14 +41,14 @@ pub static DAY_17: LazyLock<CliProblem<Input, CommandLineArguments, Day17, Freez
     });
 
 #[derive(Clone, Debug)]
-pub struct Input {
+pub struct Day17 {
     a: usize,
     b: usize,
     c: usize,
     program: Vec<(Instruction, usize)>,
 }
 
-impl StringParse for Input {
+impl StringParse for Day17 {
     fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
         let program = parse_instruction()
             .separated_by(just(","))
@@ -68,7 +68,7 @@ impl StringParse for Input {
             .then(program)
             .then_ignore(text::newline())
             .then_ignore(end())
-            .map(|(((a, b), c), program)| Input { a, b, c, program })
+            .map(|(((a, b), c), program)| Day17 { a, b, c, program })
     }
 }
 
@@ -125,8 +125,8 @@ pub struct CommandLineArguments {
     program_execution: ProgramExecution,
 }
 
-#[problem_day(Day17)]
-fn run(mut input: Input, arguments: &CommandLineArguments) -> ProblemResult {
+#[problem_day]
+fn run(mut input: Day17, arguments: &CommandLineArguments) -> ProblemResult {
     match arguments.program_execution {
         ProgramExecution::Run => run_program(&mut input).into(),
         ProgramExecution::FindQuine => {
@@ -195,7 +195,7 @@ fn run(mut input: Input, arguments: &CommandLineArguments) -> ProblemResult {
     }
 }
 
-fn run_program_with_first_out(input: &mut Input) -> usize {
+fn run_program_with_first_out(input: &mut Day17) -> usize {
     let mut pc = 0;
 
     while pc < input.program.len() * 2 {
@@ -230,7 +230,7 @@ fn run_program_with_first_out(input: &mut Input) -> usize {
     panic!("No output!")
 }
 
-fn run_program(input: &mut Input) -> String {
+fn run_program(input: &mut Day17) -> String {
     let mut pc = 0;
     let mut out = Vec::new();
 
@@ -266,7 +266,7 @@ fn run_program(input: &mut Input) -> String {
     out.into_iter().map(|value| value.to_string()).join(",")
 }
 
-fn get_value(register: &Input, operand: usize) -> usize {
+fn get_value(register: &Day17, operand: usize) -> usize {
     match operand {
         x @ 0..=3 => x,
         4 => register.a,

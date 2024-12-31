@@ -70,29 +70,27 @@ pub struct Part<T, O> {
     samples: Vec<(&'static str, O)>,
 }
 
-pub struct CliProblem<I, A, P, S>
+pub struct CliProblem<I, A, S>
 where
-    I: StringParse,
+    I: StringParse + Problem<A>,
     A: CliArgs,
-    P: Problem<I, A>,
 {
     name: &'static str,
     help: &'static str,
     file_help: &'static str,
-    parts: Vec<Part<A, P::Output>>,
+    parts: Vec<Part<A, I::Output>>,
     _state: S,
     _marker: PhantomData<I>,
 }
 
-pub fn new_cli_problem<I, A, P>(
+pub fn new_cli_problem<I, A>(
     name: &'static str,
     help: &'static str,
     file_help: &'static str,
-) -> CliProblem<I, A, P, Thaw>
+) -> CliProblem<I, A, Thaw>
 where
-    I: StringParse,
+    I: StringParse + Problem<A>,
     A: CliArgs,
-    P: Problem<I, A>,
 {
     CliProblem {
         name,
@@ -104,23 +102,22 @@ where
     }
 }
 
-impl<I, A, P> CliProblem<I, A, P, Thaw>
+impl<I, A> CliProblem<I, A, Thaw>
 where
-    I: StringParse,
+    I: StringParse + Problem<A>,
     A: CliArgs,
-    P: Problem<I, A>,
 {
     pub fn with_part(
         mut self,
         help: &'static str,
         arg: A,
-        samples: Vec<(&'static str, P::Output)>,
+        samples: Vec<(&'static str, I::Output)>,
     ) -> Self {
         self.parts.push(Part { help, arg, samples });
         self
     }
 
-    pub fn freeze(self) -> CliProblem<I, A, P, Freeze> {
+    pub fn freeze(self) -> CliProblem<I, A, Freeze> {
         CliProblem {
             name: self.name,
             help: self.help,
@@ -132,11 +129,10 @@ where
     }
 }
 
-impl<I, A, P> CliProblem<I, A, P, Freeze>
+impl<I, A> CliProblem<I, A, Freeze>
 where
-    I: StringParse,
+    I: StringParse + Problem<A>,
     A: CliArgs,
-    P: Problem<I, A>,
 {
     fn run_with_file_and_args(
         &self,
@@ -156,27 +152,25 @@ where
             .map(|input| {
                 #[cfg(feature = "telemetry")]
                 let _run = run_part.time_run();
-                P::run(input.0, args).into()
+                input.0.run(args).into()
             })
     }
 }
 
 // Frozen problems have no mutable methods so they can be static
-unsafe impl<I, A, P> Send for CliProblem<I, A, P, Freeze>
+unsafe impl<I, A> Send for CliProblem<I, A, Freeze>
 where
-    I: StringParse,
+    I: StringParse + Problem<A>,
     A: CliArgs,
-    P: Problem<I, A>,
 {
 }
 
 pub static PART_NAMES: [&str; 2] = ["part1", "part2"];
 
-impl<I, A, P> Command for CliProblem<I, A, P, Freeze>
+impl<I, A> Command for CliProblem<I, A, Freeze>
 where
-    I: StringParse,
+    I: StringParse + Problem<A>,
     A: CliArgs,
-    P: Problem<I, A>,
 {
     fn run(&self, args: &ArgMatches) -> Result<ProblemResult> {
         self.parts

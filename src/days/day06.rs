@@ -16,7 +16,7 @@ use itertools::Itertools;
 use ndarray::{Array2, Array3, Axis};
 use std::sync::LazyLock;
 
-pub static DAY_06: LazyLock<CliProblem<Input, CommandLineArguments, Day06, Freeze>> =
+pub static DAY_06: LazyLock<CliProblem<Day06, CommandLineArguments, Freeze>> =
     LazyLock::new(|| {
         new_cli_problem(
             "day06",
@@ -40,7 +40,7 @@ pub static DAY_06: LazyLock<CliProblem<Input, CommandLineArguments, Day06, Freez
         .freeze()
     });
 
-pub struct Input(Array2<Lab>);
+pub struct Day06(Array2<Lab>);
 
 #[derive(Clone)]
 enum Lab {
@@ -49,13 +49,13 @@ enum Lab {
     Guard,
 }
 
-impl StringParse for Input {
+impl StringParse for Day06 {
     fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
         let open = just(".").to(Lab::Open);
         let obstruction = just("#").to(Lab::Obstruction);
         let guard = just("^").to(Lab::Guard);
 
-        parse_table2(choice((open, obstruction, guard))).map(Input)
+        parse_table2(choice((open, obstruction, guard))).map(Day06)
     }
 }
 
@@ -71,8 +71,8 @@ pub struct CommandLineArguments {
     avoidence_strategy: AvoidenceStrategy,
 }
 
-#[problem_day(Day06)]
-fn run(input: Input, arguments: &CommandLineArguments) -> usize {
+#[problem_day]
+fn run(input: Day06, arguments: &CommandLineArguments) -> usize {
     let (max_x, max_y) = BoundedPoint::maxes_from_table(&input.0);
 
     let guard_position = input

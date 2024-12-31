@@ -11,7 +11,7 @@ use itertools::Itertools;
 use ndarray::Array2;
 use std::sync::LazyLock;
 
-pub static DAY_25: LazyLock<CliProblem<Input, CommandLineArguments, Day25, Freeze>> =
+pub static DAY_25: LazyLock<CliProblem<Day25, CommandLineArguments, Freeze>> =
     LazyLock::new(|| {
         new_cli_problem(
             "day25",
@@ -26,9 +26,9 @@ pub static DAY_25: LazyLock<CliProblem<Input, CommandLineArguments, Day25, Freez
         .freeze()
     });
 
-pub struct Input(Vec<Array2<KeyHole>>);
+pub struct Day25(Vec<Array2<KeyHole>>);
 
-impl StringParse for Input {
+impl StringParse for Day25 {
     fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
         let blocked = just("#").to(KeyHole::Blocked);
         let open = just(".").to(KeyHole::Open);
@@ -56,7 +56,7 @@ impl StringParse for Input {
                 .map_err(|op| Rich::custom(span, op))
             });
 
-        parse_between_blank_lines(lock_key).map(Input)
+        parse_between_blank_lines(lock_key).map(Day25)
     }
 }
 
@@ -69,8 +69,8 @@ enum KeyHole {
 #[derive(Args)]
 pub struct CommandLineArguments {}
 
-#[problem_day(Day25)]
-fn run(input: Input, _arguments: &CommandLineArguments) -> usize {
+#[problem_day]
+fn run(input: Day25, _arguments: &CommandLineArguments) -> usize {
     let (_, max_y) = BoundedPoint::maxes_from_table(input.0.first().expect("At least 1"));
     let (keys, locks): (Vec<_>, Vec<_>) = input
         .0

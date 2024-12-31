@@ -9,7 +9,7 @@ use chumsky::{error::Rich, extra, prelude::just, Parser};
 use clap::{Args, ValueEnum};
 use std::sync::LazyLock;
 
-pub static DAY_01: LazyLock<CliProblem<Input, CommandLineArguments, Day01, Freeze>> =
+pub static DAY_01: LazyLock<CliProblem<Day01, CommandLineArguments, Freeze>> =
     LazyLock::new(|| {
         new_cli_problem(
             "day01",
@@ -33,11 +33,11 @@ pub static DAY_01: LazyLock<CliProblem<Input, CommandLineArguments, Day01, Freez
         .freeze()
     });
 
-pub struct Input(Vec<(usize, usize)>);
+pub struct Day01(Vec<(usize, usize)>);
 
-impl StringParse for Input {
+impl StringParse for Day01 {
     fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
-        parse_lines(parse_usize().then_ignore(just("   ")).then(parse_usize())).map(Input)
+        parse_lines(parse_usize().then_ignore(just("   ")).then(parse_usize())).map(Day01)
     }
 }
 
@@ -53,8 +53,8 @@ pub struct CommandLineArguments {
     interpretation: ListInterpretation,
 }
 
-#[problem_day(Day01)]
-fn run(input: Input, arguments: &CommandLineArguments) -> usize {
+#[problem_day]
+fn run(input: Day01, arguments: &CommandLineArguments) -> usize {
     let (mut left, mut right) = input.0.into_iter().fold(
         (Vec::new(), Vec::new()),
         |(mut left_list, mut right_list), (left, right)| {

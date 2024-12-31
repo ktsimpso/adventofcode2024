@@ -17,7 +17,7 @@ use itertools::Itertools;
 use ndarray::Array2;
 use std::{iter::once, sync::LazyLock};
 
-pub static DAY_08: LazyLock<CliProblem<Input, CommandLineArguments, Day08, Freeze>> =
+pub static DAY_08: LazyLock<CliProblem<Day08, CommandLineArguments, Freeze>> =
     LazyLock::new(|| {
         new_cli_problem(
             "day08",
@@ -41,16 +41,16 @@ pub static DAY_08: LazyLock<CliProblem<Input, CommandLineArguments, Day08, Freez
         .freeze()
     });
 
-pub struct Input(Array2<Dish>);
+pub struct Day08(Array2<Dish>);
 
-impl StringParse for Input {
+impl StringParse for Day08 {
     fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
         let empty = just(".").to(Dish::Empty);
         let antena = any()
             .and_is(just(".").not())
             .and_is(text::newline().not())
             .map(Dish::Antena);
-        parse_table2(empty.or(antena)).map(Input)
+        parse_table2(empty.or(antena)).map(Day08)
     }
 }
 
@@ -76,8 +76,8 @@ enum Dish {
     Antena(char),
 }
 
-#[problem_day(Day08)]
-fn run(input: Input, arguments: &CommandLineArguments) -> usize {
+#[problem_day]
+fn run(input: Day08, arguments: &CommandLineArguments) -> usize {
     let (max_x, max_y) = BoundedPoint::maxes_from_table(&input.0);
 
     input

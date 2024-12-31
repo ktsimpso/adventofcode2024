@@ -9,7 +9,7 @@ use clap::{Args, ValueEnum};
 use itertools::{iterate, Itertools};
 use std::sync::LazyLock;
 
-pub static DAY_22: LazyLock<CliProblem<Input, CommandLineArguments, Day22, Freeze>> =
+pub static DAY_22: LazyLock<CliProblem<Day22, CommandLineArguments, Freeze>> =
     LazyLock::new(|| {
         new_cli_problem(
             "day22",
@@ -33,11 +33,11 @@ pub static DAY_22: LazyLock<CliProblem<Input, CommandLineArguments, Day22, Freez
         .freeze()
     });
 
-pub struct Input(Vec<usize>);
+pub struct Day22(Vec<usize>);
 
-impl StringParse for Input {
+impl StringParse for Day22 {
     fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
-        parse_lines(parse_usize()).map(Input)
+        parse_lines(parse_usize()).map(Day22)
     }
 }
 
@@ -57,8 +57,8 @@ pub struct CommandLineArguments {
     banana_market_information: BananaMarketInformation,
 }
 
-#[problem_day(Day22)]
-fn run(input: Input, arguments: &CommandLineArguments) -> usize {
+#[problem_day]
+fn run(input: Day22, arguments: &CommandLineArguments) -> usize {
     match arguments.banana_market_information {
         BananaMarketInformation::LastSecret => input
             .0

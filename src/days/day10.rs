@@ -11,7 +11,7 @@ use clap::{Args, ValueEnum};
 use ndarray::Array2;
 use std::{collections::VecDeque, sync::LazyLock};
 
-pub static DAY_10: LazyLock<CliProblem<Input, CommandLineArguments, Day10, Freeze>> =
+pub static DAY_10: LazyLock<CliProblem<Day10, CommandLineArguments, Freeze>> =
     LazyLock::new(|| {
         new_cli_problem(
             "day10",
@@ -35,11 +35,11 @@ pub static DAY_10: LazyLock<CliProblem<Input, CommandLineArguments, Day10, Freez
         .freeze()
     });
 
-pub struct Input(Array2<u32>);
+pub struct Day10(Array2<u32>);
 
-impl StringParse for Input {
+impl StringParse for Day10 {
     fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
-        parse_table2(parse_digit().map(|c| c.to_digit(10).expect("Works"))).map(Input)
+        parse_table2(parse_digit().map(|c| c.to_digit(10).expect("Works"))).map(Day10)
     }
 }
 
@@ -55,8 +55,8 @@ pub struct CommandLineArguments {
     scoring: ScoringSystem,
 }
 
-#[problem_day(Day10)]
-fn run(input: Input, arguments: &CommandLineArguments) -> usize {
+#[problem_day]
+fn run(input: Day10, arguments: &CommandLineArguments) -> usize {
     match arguments.scoring {
         ScoringSystem::UniquePeaks => find_trail_path_score(
             &input.0,

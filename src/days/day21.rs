@@ -15,7 +15,7 @@ use clap::Args;
 use itertools::Itertools;
 use std::{iter::once, sync::LazyLock};
 
-pub static DAY_21: LazyLock<CliProblem<Input, CommandLineArguments, Day21, Freeze>> =
+pub static DAY_21: LazyLock<CliProblem<Day21, CommandLineArguments, Freeze>> =
     LazyLock::new(|| {
         new_cli_problem(
             "day21",
@@ -35,9 +35,9 @@ pub static DAY_21: LazyLock<CliProblem<Input, CommandLineArguments, Day21, Freez
         .freeze()
     });
 
-pub struct Input(Vec<Vec<Code>>);
+pub struct Day21(Vec<Vec<Code>>);
 
-impl StringParse for Input {
+impl StringParse for Day21 {
     fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
         let zero = just("0").to(Code::Zero);
         let one = just("1").to(Code::One);
@@ -54,7 +54,7 @@ impl StringParse for Input {
             zero, one, two, three, four, five, six, seven, eight, nine, activate,
         ));
 
-        parse_lines(button.repeated().at_least(1).collect::<Vec<_>>()).map(Input)
+        parse_lines(button.repeated().at_least(1).collect::<Vec<_>>()).map(Day21)
     }
 }
 
@@ -383,8 +383,8 @@ pub struct CommandLineArguments {
     )]
     n: usize,
 }
-#[problem_day(Day21)]
-fn run(input: Input, arguments: &CommandLineArguments) -> usize {
+#[problem_day]
+fn run(input: Day21, arguments: &CommandLineArguments) -> usize {
     input
         .0
         .into_iter()

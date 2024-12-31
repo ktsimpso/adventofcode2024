@@ -10,7 +10,7 @@ use clap::value_parser;
 use ndarray::Array2;
 use std::{collections::VecDeque, sync::LazyLock};
 
-pub static DAY_18: LazyLock<CliProblem<Input, CommandLineArguments, Day18, Freeze>> =
+pub static DAY_18: LazyLock<CliProblem<Day18, CommandLineArguments, Freeze>> =
     LazyLock::new(|| {
         new_cli_problem(
             "day18",
@@ -38,11 +38,11 @@ pub static DAY_18: LazyLock<CliProblem<Input, CommandLineArguments, Day18, Freez
         .freeze()
     });
 
-pub struct Input(Vec<(usize, usize)>);
+pub struct Day18(Vec<(usize, usize)>);
 
-impl StringParse for Input {
+impl StringParse for Day18 {
     fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
-        parse_lines(parse_usize().then_ignore(just(",")).then(parse_usize())).map(Input)
+        parse_lines(parse_usize().then_ignore(just(",")).then(parse_usize())).map(Day18)
     }
 }
 
@@ -112,8 +112,8 @@ enum Memory {
     Safe,
 }
 
-#[problem_day(Day18)]
-fn run(input: Input, arguments: &CommandLineArguments) -> ProblemResult {
+#[problem_day]
+fn run(input: Day18, arguments: &CommandLineArguments) -> ProblemResult {
     match arguments.path_stat {
         PathStat::ShortestPath(n) => {
             let mut data =

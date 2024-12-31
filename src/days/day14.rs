@@ -12,7 +12,7 @@ use itertools::Itertools;
 use num_integer::Integer;
 use std::{cmp::max, collections::HashSet, sync::LazyLock};
 
-pub static DAY_14: LazyLock<CliProblem<Input, CommandLineArguments, Day14, Freeze>> =
+pub static DAY_14: LazyLock<CliProblem<Day14, CommandLineArguments, Freeze>> =
     LazyLock::new(|| {
         new_cli_problem(
             "day14",
@@ -47,9 +47,9 @@ struct Robot {
     vertical_velocity: isize,
 }
 
-pub struct Input(Vec<Robot>);
+pub struct Day14(Vec<Robot>);
 
-impl StringParse for Input {
+impl StringParse for Day14 {
     fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
         let robot = just("p=")
             .ignore_then(parse_isize())
@@ -64,7 +64,7 @@ impl StringParse for Input {
                 horiztonal_velocity: dx,
                 vertical_velocity: dy,
             });
-        parse_lines(robot).map(Input)
+        parse_lines(robot).map(Day14)
     }
 }
 
@@ -131,8 +131,8 @@ enum Quandrant {
     SouthWest,
 }
 
-#[problem_day(Day14)]
-fn run(input: Input, arguments: &CommandLineArguments) -> isize {
+#[problem_day]
+fn run(input: Day14, arguments: &CommandLineArguments) -> isize {
     let x_size = arguments.x_size as isize;
     let y_size = arguments.y_size as isize;
     match arguments.robot_stat {

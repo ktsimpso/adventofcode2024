@@ -17,7 +17,7 @@ use ndarray::{Array2, Array3};
 use priority_queue::PriorityQueue;
 use std::{cmp::Reverse, collections::VecDeque, iter::once, sync::LazyLock};
 
-pub static DAY_16: LazyLock<CliProblem<Input, CommandLineArguments, Day16, Freeze>> =
+pub static DAY_16: LazyLock<CliProblem<Day16, CommandLineArguments, Freeze>> =
     LazyLock::new(|| {
         new_cli_problem(
             "day16",
@@ -41,16 +41,16 @@ pub static DAY_16: LazyLock<CliProblem<Input, CommandLineArguments, Day16, Freez
         .freeze()
     });
 
-pub struct Input(Array2<Maze>);
+pub struct Day16(Array2<Maze>);
 
-impl StringParse for Input {
+impl StringParse for Day16 {
     fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
         let start = just("S").to(Maze::Start);
         let end = just("E").to(Maze::End);
         let open = just(".").to(Maze::Open);
         let wall = just("#").to(Maze::Wall);
         let maze = parse_table2(choice((start, end, open, wall)));
-        maze.map(Input)
+        maze.map(Day16)
     }
 }
 
@@ -74,8 +74,8 @@ pub struct CommandLineArguments {
     path_stat: PathStat,
 }
 
-#[problem_day(Day16)]
-fn run(input: Input, arguments: &CommandLineArguments) -> usize {
+#[problem_day]
+fn run(input: Day16, arguments: &CommandLineArguments) -> usize {
     let (max_x, max_y) = BoundedPoint::maxes_from_table(&input.0);
 
     let start = input

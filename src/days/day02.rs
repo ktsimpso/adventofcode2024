@@ -10,7 +10,7 @@ use clap::Args;
 use itertools::Itertools;
 use std::sync::LazyLock;
 
-pub static DAY_02: LazyLock<CliProblem<Input, CommandLineArguments, Day02, Freeze>> =
+pub static DAY_02: LazyLock<CliProblem<Day02, CommandLineArguments, Freeze>> =
     LazyLock::new(|| {
         new_cli_problem(
             "day02",
@@ -34,11 +34,11 @@ pub static DAY_02: LazyLock<CliProblem<Input, CommandLineArguments, Day02, Freez
         .freeze()
     });
 
-pub struct Input(Vec<Vec<usize>>);
+pub struct Day02(Vec<Vec<usize>>);
 
-impl StringParse for Input {
+impl StringParse for Day02 {
     fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
-        parse_lines(parse_usize().separated_by(just(" ")).at_least(1).collect()).map(Input)
+        parse_lines(parse_usize().separated_by(just(" ")).at_least(1).collect()).map(Day02)
     }
 }
 
@@ -48,8 +48,8 @@ pub struct CommandLineArguments {
     error_correction: bool,
 }
 
-#[problem_day(Day02)]
-fn run(input: Input, arguments: &CommandLineArguments) -> usize {
+#[problem_day]
+fn run(input: Day02, arguments: &CommandLineArguments) -> usize {
     let (valid, potentially_invalid): (Vec<_>, Vec<_>) = input
         .0
         .into_iter()

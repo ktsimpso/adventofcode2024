@@ -43,8 +43,8 @@ impl From<u32> for ProblemResult {
     }
 }
 
-pub trait Problem<I, A> {
+pub trait Problem<A> {
     type Output: Into<ProblemResult> + Clone;
 
-    fn run(input: I, arguments: &A) -> Self::Output;
+    fn run(self, arguments: &A) -> Self::Output;
 }

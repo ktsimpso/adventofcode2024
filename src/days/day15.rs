@@ -16,7 +16,7 @@ use itertools::Itertools;
 use ndarray::Array2;
 use std::{iter::once, sync::LazyLock};
 
-pub static DAY_15: LazyLock<CliProblem<Input, CommandLineArguments, Day15, Freeze>> =
+pub static DAY_15: LazyLock<CliProblem<Day15, CommandLineArguments, Freeze>> =
     LazyLock::new(|| {
         new_cli_problem(
             "day15",
@@ -37,7 +37,7 @@ pub static DAY_15: LazyLock<CliProblem<Input, CommandLineArguments, Day15, Freez
     });
 
 #[derive(Debug)]
-pub struct Input {
+pub struct Day15 {
     warehouse: Array2<WarehouseFloor>,
     movements: Vec<CardinalDirection>,
 }
@@ -51,7 +51,7 @@ enum WarehouseFloor {
     Robot,
 }
 
-impl StringParse for Input {
+impl StringParse for Day15 {
     fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
         let wall = just("#").to(WarehouseFloor::Wall);
         let open = just(".").to(WarehouseFloor::Open);
@@ -100,7 +100,7 @@ impl StringParse for Input {
         warehouse
             .then_ignore(text::newline().repeated().at_least(1))
             .then(directions)
-            .map(|(warehouse, movements)| Input {
+            .map(|(warehouse, movements)| Day15 {
                 warehouse,
                 movements,
             })
@@ -115,8 +115,8 @@ pub struct CommandLineArguments {
     wide: bool,
 }
 
-#[problem_day(Day15)]
-fn run(mut input: Input, arguments: &CommandLineArguments) -> usize {
+#[problem_day]
+fn run(mut input: Day15, arguments: &CommandLineArguments) -> usize {
     if arguments.wide {
         let mut wide_warehouse = widen_warehouse(&input.warehouse);
 

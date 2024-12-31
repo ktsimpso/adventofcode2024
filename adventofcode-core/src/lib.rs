@@ -1,38 +1,12 @@
 use proc_macro_error::abort;
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
-use syn::{Ident, ItemFn, ItemStruct, ReturnType, parse_quote, parse_str, parse2};
+use syn::{FnArg, ItemFn, ReturnType, Stmt, parse2};
 
 pub fn problem_day_core(args: TokenStream, input: TokenStream) -> TokenStream {
-    let arguments = args
-        .clone()
-        .into_iter()
-        .map(|argument| argument.to_string())
-        .collect::<Vec<_>>();
-
-    if arguments.len() != 1 {
-        abort!(args, "Must specify exactly one argument.")
+    if !args.is_empty() {
+        abort!(args, "Must specify exactly zero arguments.")
     }
-
-    let day = &arguments[0];
-
-    match day.chars().next() {
-        Some(c) => {
-            if !c.is_uppercase() {
-                abort!(args, "Day must be capitalized")
-            }
-        }
-        None => abort!(args, "Argument must be at least one character."),
-    }
-
-    let day = match parse_str::<Ident>(day) {
-        Ok(day) => day,
-        Err(e) => return e.to_compile_error(),
-    };
-
-    let day_struct: ItemStruct = parse_quote! {
-        pub struct #day {}
-    };
 
     let mut run = match parse2::<ItemFn>(input) {
         Ok(run) => run,
@@ -40,13 +14,13 @@ pub fn problem_day_core(args: TokenStream, input: TokenStream) -> TokenStream {
     };
 
     let output_type = match run.sig.output.clone() {
-        syn::ReturnType::Default => {
+        ReturnType::Default => {
             abort!(
                 run.to_token_stream(),
                 "Must have a return type that implements Into<ProblemResult>"
             )
         }
-        syn::ReturnType::Type(_, t) => t,
+        ReturnType::Type(_, t) => t,
     };
 
     let name = &run.sig.ident.to_string();
@@ -58,18 +32,18 @@ pub fn problem_day_core(args: TokenStream, input: TokenStream) -> TokenStream {
         abort!(run.sig.inputs, "Exactly two arguments required.")
     }
 
-    let input = match run.sig.inputs.get(0).expect("Already verified length") {
-        syn::FnArg::Receiver(receiver) => {
+    let (input_type, input_name) = match run.sig.inputs.get(0).expect("Already verified length") {
+        FnArg::Receiver(receiver) => {
             abort!(receiver.to_token_stream(), "Should be it's own input")
         }
-        syn::FnArg::Typed(pat_type) => &pat_type.ty,
+        FnArg::Typed(pat_type) => (pat_type.ty.clone(), pat_type.pat.clone()),
     };
 
     let command_line_arguments = match run.sig.inputs.get(1).expect("Already verified length") {
-        syn::FnArg::Receiver(receiver) => {
+        FnArg::Receiver(receiver) => {
             abort!(receiver.to_token_stream(), "Should be it's own input")
         }
-        syn::FnArg::Typed(pat_type) => match *pat_type.ty.clone() {
+        FnArg::Typed(pat_type) => match *pat_type.ty.clone() {
             syn::Type::Reference(type_reference) => type_reference.elem,
             _ => abort!(
                 pat_type.ty.to_token_stream(),
@@ -79,11 +53,14 @@ pub fn problem_day_core(args: TokenStream, input: TokenStream) -> TokenStream {
     };
 
     run.sig.output = parse2::<ReturnType>(quote! { -> Self::Output }).expect("Works");
+    run.sig.inputs[0] = parse2::<FnArg>(quote! { self }).expect("Works");
+    run.block.stmts.insert(
+        0,
+        parse2::<Stmt>(quote! { let #input_name = self; }).expect("Works"),
+    );
 
     quote! {
-        #day_struct
-
-        impl Problem<#input, #command_line_arguments> for #day {
+        impl Problem<#command_line_arguments> for #input_type {
             type Output = #output_type;
 
             #run
@@ -92,15 +69,15 @@ pub fn problem_day_core(args: TokenStream, input: TokenStream) -> TokenStream {
 }
 
 #[test]
-fn adds_struct_and_impl() {
+fn implements_problem() {
     let before = quote! {
-        fn run(input: Input, arguments: &CommandLineArguments) -> usize {
+        fn run(input: Day26, arguments: &CommandLineArguments) -> usize {
             0
         }
     };
-    let after = problem_day_core(quote!(Day26), before);
+    let after = problem_day_core(quote!(), before);
     assert_eq!(
         after.to_string(),
-        "pub struct Day26 { } impl Problem < Input , CommandLineArguments > for Day26 { type Output = usize ; fn run (input : Input , arguments : & CommandLineArguments) -> Self :: Output { 0 } }"
+        "impl Problem < CommandLineArguments > for Day26 { type Output = usize ; fn run (self , arguments : & CommandLineArguments) -> Self :: Output { let input = self ; 0 } }"
     );
 }

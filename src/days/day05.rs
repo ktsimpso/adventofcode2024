@@ -14,7 +14,7 @@ use chumsky::{
 use clap::Args;
 use std::sync::LazyLock;
 
-pub static DAY_05: LazyLock<CliProblem<Input, CommandLineArguments, Day05, Freeze>> =
+pub static DAY_05: LazyLock<CliProblem<Day05, CommandLineArguments, Freeze>> =
     LazyLock::new(|| {
         new_cli_problem(
             "day05",
@@ -35,12 +35,12 @@ pub static DAY_05: LazyLock<CliProblem<Input, CommandLineArguments, Day05, Freez
     });
 
 #[derive(Debug)]
-pub struct Input {
+pub struct Day05 {
     page_rules: Vec<(usize, usize)>,
     page_updates: Vec<Vec<usize>>,
 }
 
-impl StringParse for Input {
+impl StringParse for Day05 {
     fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
         let page_rules = parse_usize()
             .then_ignore(just("|"))
@@ -61,7 +61,7 @@ impl StringParse for Input {
             .then(page_updates)
             .then_ignore(text::newline().repeated())
             .then_ignore(end())
-            .map(|(page_rules, page_updates)| Input {
+            .map(|(page_rules, page_updates)| Day05 {
                 page_rules,
                 page_updates,
             })
@@ -74,8 +74,8 @@ pub struct CommandLineArguments {
     valid: bool,
 }
 
-#[problem_day(Day05)]
-fn run(input: Input, arguments: &CommandLineArguments) -> usize {
+#[problem_day]
+fn run(input: Day05, arguments: &CommandLineArguments) -> usize {
     let rule_map = build_page_rule_mapping(&input.page_rules);
 
     if arguments.valid {

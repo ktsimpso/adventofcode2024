@@ -10,7 +10,7 @@ use clap::{Args, ValueEnum};
 use ndarray::Array2;
 use std::{collections::VecDeque, sync::LazyLock};
 
-pub static DAY_12: LazyLock<CliProblem<Input, CommandLineArguments, Day12, Freeze>> =
+pub static DAY_12: LazyLock<CliProblem<Day12, CommandLineArguments, Freeze>> =
     LazyLock::new(|| {
         new_cli_problem(
             "day12",
@@ -43,11 +43,11 @@ pub static DAY_12: LazyLock<CliProblem<Input, CommandLineArguments, Day12, Freez
         .freeze()
     });
 
-pub struct Input(Array2<char>);
+pub struct Day12(Array2<char>);
 
-impl StringParse for Input {
+impl StringParse for Day12 {
     fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
-        parse_table2(one_of('A'..='Z')).map(Input)
+        parse_table2(one_of('A'..='Z')).map(Day12)
     }
 }
 
@@ -63,8 +63,8 @@ pub struct CommandLineArguments {
     fence_score: FenceScore,
 }
 
-#[problem_day(Day12)]
-fn run(input: Input, arguments: &CommandLineArguments) -> usize {
+#[problem_day]
+fn run(input: Day12, arguments: &CommandLineArguments) -> usize {
     let (max_x, max_y) = BoundedPoint::maxes_from_table(&input.0);
     let mut visited = Array2::from_elem(input.0.dim(), false);
     let mut regions = Vec::new();
