@@ -97,17 +97,21 @@ fn parse_towel_color<'a>() -> impl Parser<'a, &'a str, Vec<Color>, extra::Err<Ri
 }
 
 #[problem_day]
-fn run(input: Day19, arguments: &CommandLineArguments) -> usize {
-    let prefix_map = build_prefix_map(&input.available_towels);
+fn run(
+    Day19 {
+        available_towels,
+        target_towels,
+    }: Day19,
+    arguments: &CommandLineArguments,
+) -> usize {
+    let prefix_map = build_prefix_map(&available_towels);
 
     match arguments.towel_options {
-        TowelOptions::TowelPossible => input
-            .target_towels
+        TowelOptions::TowelPossible => target_towels
             .into_iter()
             .filter(|target| is_possible(target, &prefix_map))
             .count(),
-        TowelOptions::NumberOfWaysPossible => input
-            .target_towels
+        TowelOptions::NumberOfWaysPossible => target_towels
             .into_iter()
             .map(|target| count_possible(&target, &prefix_map, &mut vec![None; target.len()]))
             .sum(),

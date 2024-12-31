@@ -76,11 +76,10 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day08, extra::Err<Rich<'a, char>>> {
 }
 
 #[problem_day]
-fn run(input: Day08, arguments: &CommandLineArguments) -> usize {
-    let (max_x, max_y) = BoundedPoint::maxes_from_table(&input.0);
+fn run(Day08(input): Day08, arguments: &CommandLineArguments) -> usize {
+    let (max_x, max_y) = BoundedPoint::maxes_from_table(&input);
 
     input
-        .0
         .indexed_iter()
         .filter(|(_, location)| matches!(location, Dish::Antena(_)))
         .fold(AHashMap::new(), |mut acc, (index, item)| {

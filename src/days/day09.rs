@@ -80,10 +80,10 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day09, extra::Err<Rich<'a, char>>> {
 }
 
 #[problem_day]
-fn run(input: Day09, arguments: &CommandLineArguments) -> usize {
+fn run(Day09(input): Day09, arguments: &CommandLineArguments) -> usize {
     match arguments.compression_strategy {
         CompressionStrategy::HighestCompression => {
-            let ids_with_files: Vec<_> = input.0.into_iter().enumerate().collect();
+            let ids_with_files: Vec<_> = input.into_iter().enumerate().collect();
             let mut left = 0;
             let mut right = ids_with_files.len() - 1;
             let mut right_used = 0;
@@ -139,7 +139,7 @@ fn run(input: Day09, arguments: &CommandLineArguments) -> usize {
                 .map(|(index, id)| index * id)
                 .sum()
         }
-        CompressionStrategy::FirstAvailableSlot => compress_to_first_avilable_slot(&input.0),
+        CompressionStrategy::FirstAvailableSlot => compress_to_first_avilable_slot(&input),
     }
 }
 

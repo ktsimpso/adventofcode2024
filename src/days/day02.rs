@@ -48,9 +48,8 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day02, extra::Err<Rich<'a, char>>> {
 }
 
 #[problem_day]
-fn run(input: Day02, arguments: &CommandLineArguments) -> usize {
+fn run(Day02(input): Day02, arguments: &CommandLineArguments) -> usize {
     let (valid, potentially_invalid): (Vec<_>, Vec<_>) = input
-        .0
         .into_iter()
         .partition(|report| validate_report(report));
 

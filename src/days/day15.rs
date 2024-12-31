@@ -115,9 +115,15 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day15, extra::Err<Rich<'a, char>>> {
 }
 
 #[problem_day]
-fn run(mut input: Day15, arguments: &CommandLineArguments) -> usize {
+fn run(
+    Day15 {
+        mut warehouse,
+        movements,
+    }: Day15,
+    arguments: &CommandLineArguments,
+) -> usize {
     if arguments.wide {
-        let mut wide_warehouse = widen_warehouse(&input.warehouse);
+        let mut wide_warehouse = widen_warehouse(&warehouse);
 
         let (max_x, max_y) = BoundedPoint::maxes_from_table(&wide_warehouse);
         let mut robot_position = wide_warehouse
@@ -126,24 +132,23 @@ fn run(mut input: Day15, arguments: &CommandLineArguments) -> usize {
             .map(|(index, _)| BoundedPoint::from_table_index(index, max_x, max_y))
             .expect("One robot exists");
 
-        input.movements.into_iter().for_each(|movement| {
+        movements.into_iter().for_each(|movement| {
             robot_position = move_direction_wide(robot_position, movement, &mut wide_warehouse);
         });
         gps_score(&wide_warehouse)
     } else {
-        let (max_x, max_y) = BoundedPoint::maxes_from_table(&input.warehouse);
-        let mut robot_position = input
-            .warehouse
+        let (max_x, max_y) = BoundedPoint::maxes_from_table(&warehouse);
+        let mut robot_position = warehouse
             .indexed_iter()
             .find(|(_, floor)| matches!(floor, WarehouseFloor::Robot))
             .map(|(index, _)| BoundedPoint::from_table_index(index, max_x, max_y))
             .expect("One robot exists");
 
-        input.movements.into_iter().for_each(|movement| {
-            robot_position = move_direction(robot_position, movement, &mut input.warehouse);
+        movements.into_iter().for_each(|movement| {
+            robot_position = move_direction(robot_position, movement, &mut warehouse);
         });
 
-        gps_score(&input.warehouse)
+        gps_score(&warehouse)
     }
 }
 

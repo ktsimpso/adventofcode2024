@@ -78,11 +78,10 @@ fn parse_mul<'a>() -> impl Parser<'a, &'a str, Instruction, extra::Err<Rich<'a, 
 }
 
 #[problem_day]
-fn run(input: Day03, arguments: &CommandLineArguments) -> usize {
+fn run(Day03(input): Day03, arguments: &CommandLineArguments) -> usize {
     let mut do_ = true;
 
     input
-        .0
         .into_iter()
         .map(|i| match i {
             Instruction::Multiply(x, y) => {

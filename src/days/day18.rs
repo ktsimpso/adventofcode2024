@@ -112,14 +112,13 @@ enum Memory {
 }
 
 #[problem_day]
-fn run(input: Day18, arguments: &CommandLineArguments) -> ProblemResult {
+fn run(Day18(input): Day18, arguments: &CommandLineArguments) -> ProblemResult {
     match arguments.path_stat {
         PathStat::ShortestPath(n) => {
             let mut data =
                 Array2::from_elem((arguments.x_size + 1, arguments.y_size + 1), Memory::Safe);
 
             input
-                .0
                 .into_iter()
                 .take(n)
                 .map(|(x, y)| BoundedPoint {
@@ -148,12 +147,10 @@ fn run(input: Day18, arguments: &CommandLineArguments) -> ProblemResult {
 
             shortest_path(&start, &end, &data).expect("Exists").into()
         }
-        PathStat::FirstBlockage => {
-            find_first_blockage(&input.0, arguments.x_size, arguments.y_size)
-                .map(|(x, y)| format!("{},{}", x, y))
-                .expect("Exists")
-                .into()
-        }
+        PathStat::FirstBlockage => find_first_blockage(&input, arguments.x_size, arguments.y_size)
+            .map(|(x, y)| format!("{},{}", x, y))
+            .expect("Exists")
+            .into(),
     }
 }
 

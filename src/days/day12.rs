@@ -63,12 +63,12 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day12, extra::Err<Rich<'a, char>>> {
 }
 
 #[problem_day]
-fn run(input: Day12, arguments: &CommandLineArguments) -> usize {
-    let (max_x, max_y) = BoundedPoint::maxes_from_table(&input.0);
-    let mut visited = Array2::from_elem(input.0.dim(), false);
+fn run(Day12(input): Day12, arguments: &CommandLineArguments) -> usize {
+    let (max_x, max_y) = BoundedPoint::maxes_from_table(&input);
+    let mut visited = Array2::from_elem(input.dim(), false);
     let mut regions = Vec::new();
 
-    for (index, plot) in input.0.indexed_iter() {
+    for (index, plot) in input.indexed_iter() {
         let current = BoundedPoint::from_table_index(index, max_x, max_y);
         if *current.get_from_table(&visited).unwrap_or(&false) {
             continue;
@@ -90,7 +90,7 @@ fn run(input: Day12, arguments: &CommandLineArguments) -> usize {
             next_plot
                 .into_iter_cardinal_adjacent()
                 .filter(|adjacent| !*adjacent.get_from_table(&visited).unwrap_or(&false))
-                .filter(|adjacent| adjacent.get_from_table(&input.0).expect("Exists") == plot)
+                .filter(|adjacent| adjacent.get_from_table(&input).expect("Exists") == plot)
                 .for_each(|adjacent| queue.push_back(adjacent));
         }
 
@@ -104,7 +104,7 @@ fn run(input: Day12, arguments: &CommandLineArguments) -> usize {
 
     regions
         .into_iter()
-        .map(|region| score_region(&region, &input.0, fence_score))
+        .map(|region| score_region(&region, &input, fence_score))
         .sum()
 }
 

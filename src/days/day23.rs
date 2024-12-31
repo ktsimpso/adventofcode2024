@@ -65,8 +65,8 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day23, extra::Err<Rich<'a, char>>> {
 }
 
 #[problem_day]
-fn run(input: Day23, arguments: &CommandLineArguments) -> ProblemResult {
-    let computer_to_connections = input.0.into_iter().fold(
+fn run(Day23(input): Day23, arguments: &CommandLineArguments) -> ProblemResult {
+    let computer_to_connections = input.into_iter().fold(
         AHashMap::new(),
         |mut acc: AHashMap<String, AHashSet<String>>, (a, b)| {
             let a_entry = acc.entry(a.clone()).or_default();

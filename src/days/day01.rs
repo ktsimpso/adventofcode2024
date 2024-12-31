@@ -53,8 +53,8 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day01, extra::Err<Rich<'a, char>>> {
 }
 
 #[problem_day]
-fn run(input: Day01, arguments: &CommandLineArguments) -> usize {
-    let (mut left, mut right) = input.0.into_iter().fold(
+fn run(Day01(input): Day01, arguments: &CommandLineArguments) -> usize {
+    let (mut left, mut right) = input.into_iter().fold(
         (Vec::new(), Vec::new()),
         |(mut left_list, mut right_list), (left, right)| {
             left_list.push(left);

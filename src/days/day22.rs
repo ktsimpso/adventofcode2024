@@ -57,15 +57,13 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day22, extra::Err<Rich<'a, char>>> {
 }
 
 #[problem_day]
-fn run(input: Day22, arguments: &CommandLineArguments) -> usize {
+fn run(Day22(input): Day22, arguments: &CommandLineArguments) -> usize {
     match arguments.banana_market_information {
         BananaMarketInformation::LastSecret => input
-            .0
             .into_iter()
             .flat_map(|number| iterate(number, |number| next_secret(*number)).nth(2000))
             .sum(),
         BananaMarketInformation::MostBananas => input
-            .0
             .into_iter()
             .enumerate()
             .fold(

@@ -89,22 +89,20 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day20, extra::Err<Rich<'a, char>>> {
 }
 
 #[problem_day]
-fn run(input: Day20, arguments: &CommandLineArguments) -> usize {
-    let (max_x, max_y) = BoundedPoint::maxes_from_table(&input.0);
+fn run(Day20(input): Day20, arguments: &CommandLineArguments) -> usize {
+    let (max_x, max_y) = BoundedPoint::maxes_from_table(&input);
     let start = input
-        .0
         .indexed_iter()
         .find(|(_, tile)| matches!(tile, Track::Start))
         .map(|(index, _)| BoundedPoint::from_table_index(index, max_x, max_y))
         .expect("Exists");
     let end = input
-        .0
         .indexed_iter()
         .find(|(_, tile)| matches!(tile, Track::End))
         .map(|(index, _)| BoundedPoint::from_table_index(index, max_x, max_y))
         .expect("Exists");
 
-    let path = shortest_path_full(&start, &end, &input.0);
+    let path = shortest_path_full(&start, &end, &input);
     best_shortcuts(
         &end,
         arguments.cheat_threshold,

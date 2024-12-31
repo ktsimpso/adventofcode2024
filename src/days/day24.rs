@@ -116,12 +116,10 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day24, extra::Err<Rich<'a, char>>> {
 }
 
 #[problem_day]
-fn run(input: Day24, arguments: &CommandLineArguments) -> ProblemResult {
-    let gates = input.gates;
-
+fn run(Day24 { gate_values, gates }: Day24, arguments: &CommandLineArguments) -> ProblemResult {
     match arguments.wire_task {
         WireTask::Simulate => {
-            let mut gate_values = input.gate_values.into_iter().collect::<AHashMap<_, _>>();
+            let mut gate_values = gate_values.into_iter().collect::<AHashMap<_, _>>();
             simulate_gates(&mut gate_values, &gates);
             extract_output_gates(&gate_values).into()
         }

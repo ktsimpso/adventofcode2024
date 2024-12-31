@@ -79,9 +79,8 @@ fn parse_button<'a>() -> impl Parser<'a, &'a str, Button, extra::Err<Rich<'a, ch
 const OFFSET: isize = 10_000_000_000_000;
 
 #[problem_day]
-fn run(input: Day13, arguments: &CommandLineArguments) -> isize {
+fn run(Day13(input): Day13, arguments: &CommandLineArguments) -> isize {
     input
-        .0
         .into_iter()
         .flat_map(|game| {
             calculate_game_cost(

@@ -131,12 +131,11 @@ enum Quandrant {
 }
 
 #[problem_day]
-fn run(input: Day14, arguments: &CommandLineArguments) -> isize {
+fn run(Day14(input): Day14, arguments: &CommandLineArguments) -> isize {
     let x_size = arguments.x_size as isize;
     let y_size = arguments.y_size as isize;
     match arguments.robot_stat {
         RobotStat::SafetyFactor(t) => input
-            .0
             .into_iter()
             .map(|robot| calculate_position_after(&robot, x_size, y_size, t as isize))
             .flat_map(|(x_pos, y_pos)| find_quadrant(x_pos, y_pos, x_size, y_size))
@@ -156,14 +155,13 @@ fn run(input: Day14, arguments: &CommandLineArguments) -> isize {
 
             for i in 0..t {
                 let new_positions = input
-                    .0
                     .iter()
                     .map(|robot| calculate_position_after(robot, x_size, y_size, i))
                     .collect::<Vec<_>>();
 
                 if i < x_size {
                     let mean = new_positions.iter().map(|(x, _)| *x).sum::<isize>() as f64
-                        / input.0.len() as f64;
+                        / input.len() as f64;
                     let variance = new_positions
                         .iter()
                         .map(|(x, _)| *x)
@@ -179,7 +177,7 @@ fn run(input: Day14, arguments: &CommandLineArguments) -> isize {
 
                 if i < y_size {
                     let mean = new_positions.iter().map(|(_, y)| *y).sum::<isize>() as f64
-                        / input.0.len() as f64;
+                        / input.len() as f64;
                     let variance = new_positions
                         .iter()
                         .map(|(_, y)| *y)
@@ -198,7 +196,6 @@ fn run(input: Day14, arguments: &CommandLineArguments) -> isize {
 
             if should_print_tree {
                 let tree = input
-                    .0
                     .iter()
                     .map(|robot| Robot {
                         position: calculate_position_after(robot, x_size, y_size, result),

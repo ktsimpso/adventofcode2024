@@ -54,8 +54,8 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day11, extra::Err<Rich<'a, char>>> {
 }
 
 #[problem_day]
-fn run(input: Day11, arguments: &CommandLineArguments) -> usize {
-    let mut stones = input.0.into_iter().fold(AHashMap::new(), |mut acc, stone| {
+fn run(Day11(input): Day11, arguments: &CommandLineArguments) -> usize {
+    let mut stones = input.into_iter().fold(AHashMap::new(), |mut acc, stone| {
         *acc.entry(stone).or_insert(0) += 1;
         acc
     });

@@ -71,18 +71,17 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day06, extra::Err<Rich<'a, char>>> {
 }
 
 #[problem_day]
-fn run(input: Day06, arguments: &CommandLineArguments) -> usize {
-    let (max_x, max_y) = BoundedPoint::maxes_from_table(&input.0);
+fn run(Day06(input): Day06, arguments: &CommandLineArguments) -> usize {
+    let (max_x, max_y) = BoundedPoint::maxes_from_table(&input);
 
     let guard_position = input
-        .0
         .indexed_iter()
         .find(|(_, location)| matches!(location, Lab::Guard))
         .map(|(location, _)| BoundedPoint::from_table_index(location, max_x, max_y))
         .expect("Guard exists");
     let guard_facing = CardinalDirection::Up;
 
-    let guard_path = run(guard_position, guard_facing, &input.0)
+    let guard_path = run(guard_position, guard_facing, &input)
         .map(|visited| {
             visited
                 .fold_axis(Axis(2), false, |acc, value| *acc || *value)
@@ -96,7 +95,7 @@ fn run(input: Day06, arguments: &CommandLineArguments) -> usize {
     match arguments.avoidence_strategy {
         AvoidenceStrategy::FullPath => guard_path.len(),
         AvoidenceStrategy::Loop => {
-            let mut sparse_lab = build_obstruction_mapping(&input.0);
+            let mut sparse_lab = build_obstruction_mapping(&input);
             let mut visited = Array3::from_elem((max_y + 1, max_x + 1, 4), 0);
             guard_path
                 .into_iter()

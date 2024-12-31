@@ -69,10 +69,9 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day25, extra::Err<Rich<'a, char>>> {
 }
 
 #[problem_day]
-fn run(input: Day25, _arguments: &CommandLineArguments) -> usize {
-    let (_, max_y) = BoundedPoint::maxes_from_table(input.0.first().expect("At least 1"));
+fn run(Day25(input): Day25, _arguments: &CommandLineArguments) -> usize {
+    let (_, max_y) = BoundedPoint::maxes_from_table(input.first().expect("At least 1"));
     let (keys, locks): (Vec<_>, Vec<_>) = input
-        .0
         .into_iter()
         .map(|lock_key| {
             let is_key = lock_key

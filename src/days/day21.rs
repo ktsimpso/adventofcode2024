@@ -384,9 +384,8 @@ impl Keypad {
 }
 
 #[problem_day]
-fn run(input: Day21, arguments: &CommandLineArguments) -> usize {
+fn run(Day21(input): Day21, arguments: &CommandLineArguments) -> usize {
     input
-        .0
         .into_iter()
         .map(|code| {
             let button_presses = once(Code::Activate)

@@ -74,19 +74,18 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day16, extra::Err<Rich<'a, char>>> {
 }
 
 #[problem_day]
-fn run(input: Day16, arguments: &CommandLineArguments) -> usize {
-    let (max_x, max_y) = BoundedPoint::maxes_from_table(&input.0);
+fn run(Day16(input): Day16, arguments: &CommandLineArguments) -> usize {
+    let (max_x, max_y) = BoundedPoint::maxes_from_table(&input);
 
     let start = input
-        .0
         .indexed_iter()
         .find(|(_, item)| matches!(item, Maze::Start))
         .map(|(index, _)| BoundedPoint::from_table_index(index, max_x, max_y))
         .expect("Exists");
 
     match arguments.path_stat {
-        PathStat::ShortestWeight => find_shortest_path_weight(&start, &input.0).expect("Exists"),
-        PathStat::TotalSeats => find_all_shortest_paths(&start, &input.0).expect("Exists"),
+        PathStat::ShortestWeight => find_shortest_path_weight(&start, &input).expect("Exists"),
+        PathStat::TotalSeats => find_all_shortest_paths(&start, &input).expect("Exists"),
     }
 }
 

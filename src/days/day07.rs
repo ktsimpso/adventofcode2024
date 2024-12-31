@@ -68,9 +68,8 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day07, extra::Err<Rich<'a, char>>> {
 }
 
 #[problem_day]
-fn run(input: Day07, arguments: &CommandLineArguments) -> usize {
+fn run(Day07(input): Day07, arguments: &CommandLineArguments) -> usize {
     input
-        .0
         .into_iter()
         .filter(|test_input| {
             can_satisfy(

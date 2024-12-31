@@ -74,19 +74,23 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day05, extra::Err<Rich<'a, char>>> {
 }
 
 #[problem_day]
-fn run(input: Day05, arguments: &CommandLineArguments) -> usize {
-    let rule_map = build_page_rule_mapping(&input.page_rules);
+fn run(
+    Day05 {
+        page_rules,
+        page_updates,
+    }: Day05,
+    arguments: &CommandLineArguments,
+) -> usize {
+    let rule_map = build_page_rule_mapping(&page_rules);
 
     if arguments.valid {
-        input
-            .page_updates
+        page_updates
             .into_iter()
             .filter(|page_update| is_valid_page_update(page_update, &rule_map))
             .map(|page_update| *page_update.get(page_update.len() / 2).unwrap_or(&0))
             .sum()
     } else {
-        input
-            .page_updates
+        page_updates
             .into_iter()
             .filter(|page_update| !is_valid_page_update(page_update, &rule_map))
             .map(|page_update| find_center_of_page_update(&page_update, &rule_map))

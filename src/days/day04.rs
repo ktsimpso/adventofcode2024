@@ -54,23 +54,21 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day04, extra::Err<Rich<'a, char>>> {
 }
 
 #[problem_day]
-fn run(input: Day04, arguments: &CommandLineArguments) -> usize {
-    let (max_x, max_y) = BoundedPoint::maxes_from_table(&input.0);
+fn run(Day04(input): Day04, arguments: &CommandLineArguments) -> usize {
+    let (max_x, max_y) = BoundedPoint::maxes_from_table(&input);
 
     match arguments.search_setting {
         SearchSetting::Xmas => input
-            .0
             .indexed_iter()
             .filter(|(_, value)| **value == 'X')
             .map(|(index, _)| BoundedPoint::from_table_index(index, max_x, max_y))
-            .map(|point| number_of_xmas_from_point(&point, &input.0))
+            .map(|point| number_of_xmas_from_point(&point, &input))
             .sum(),
         SearchSetting::MasInX => input
-            .0
             .indexed_iter()
             .filter(|(_, value)| **value == 'A')
             .map(|(index, _)| BoundedPoint::from_table_index(index, max_x, max_y))
-            .filter(|point| is_mas_from_point(point, &input.0))
+            .filter(|point| is_mas_from_point(point, &input))
             .count(),
     }
 }
