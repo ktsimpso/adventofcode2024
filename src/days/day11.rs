@@ -1,16 +1,11 @@
 use crate::libs::{
     cli::{new_cli_problem, CliProblem, Freeze},
-    parse::{parse_usize, StringParse},
+    parse::{parse_usize, ParserExt, StringParse},
     problem::Problem,
 };
 use adventofcode_macro::{problem_day, problem_parse};
 use ahash::AHashMap;
-use chumsky::{
-    error::Rich,
-    extra,
-    prelude::{end, just},
-    text, IterParser, Parser,
-};
+use chumsky::{error::Rich, extra, prelude::just, IterParser, Parser};
 use clap::Args;
 use std::sync::LazyLock;
 
@@ -48,9 +43,8 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day11, extra::Err<Rich<'a, char>>> {
         .separated_by(just(" "))
         .at_least(1)
         .collect()
-        .then_ignore(text::newline())
-        .then_ignore(end())
         .map(Day11)
+        .end()
 }
 
 #[problem_day]

@@ -1,7 +1,7 @@
 use crate::libs::{
     cli::{flag_arg, new_cli_problem, single_arg, CliArgs, CliProblem, Freeze},
     graph::BoundedPoint,
-    parse::{parse_lines, parse_usize, StringParse},
+    parse::{parse_lines, parse_usize, ParserExt, StringParse},
     problem::{Problem, ProblemResult},
 };
 use adventofcode_macro::{problem_day, problem_parse};
@@ -102,7 +102,9 @@ pub struct Day18(Vec<(usize, usize)>);
 
 #[problem_parse]
 fn parse<'a>() -> impl Parser<'a, &'a str, Day18, extra::Err<Rich<'a, char>>> {
-    parse_lines(parse_usize().then_ignore(just(",")).then(parse_usize())).map(Day18)
+    parse_lines(parse_usize().then_ignore(just(",")).then(parse_usize()))
+        .map(Day18)
+        .end()
 }
 
 #[derive(Debug, Clone)]

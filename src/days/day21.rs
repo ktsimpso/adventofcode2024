@@ -1,6 +1,6 @@
 use crate::libs::{
     cli::{new_cli_problem, CliProblem, Freeze},
-    parse::{parse_lines, StringParse},
+    parse::{parse_lines, ParserExt, StringParse},
     problem::Problem,
 };
 use adventofcode_macro::{problem_day, problem_parse};
@@ -64,7 +64,9 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day21, extra::Err<Rich<'a, char>>> {
         zero, one, two, three, four, five, six, seven, eight, nine, activate,
     ));
 
-    parse_lines(button.repeated().at_least(1).collect::<Vec<_>>()).map(Day21)
+    parse_lines(button.repeated().at_least(1).collect::<Vec<_>>())
+        .map(Day21)
+        .end()
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

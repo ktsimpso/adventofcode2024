@@ -1,6 +1,6 @@
 use crate::libs::{
     cli::{new_cli_problem, CliProblem, Freeze},
-    parse::{parse_lines, parse_usize, StringParse},
+    parse::{parse_lines, parse_usize, ParserExt, StringParse},
     problem::Problem,
 };
 use adventofcode_macro::{problem_day, problem_parse};
@@ -44,7 +44,9 @@ pub struct Day02(Vec<Vec<usize>>);
 
 #[problem_parse]
 fn parse<'a>() -> impl Parser<'a, &'a str, Day02, extra::Err<Rich<'a, char>>> {
-    parse_lines(parse_usize().separated_by(just(" ")).at_least(1).collect()).map(Day02)
+    parse_lines(parse_usize().separated_by(just(" ")).at_least(1).collect())
+        .map(Day02)
+        .end()
 }
 
 #[problem_day]

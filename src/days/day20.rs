@@ -4,7 +4,7 @@ use crate::libs::{
         BoundedPoint, CardinalDirection, HorizontalDirection, VerticalDirection,
         CARDINAL_DIRECTIONS,
     },
-    parse::{parse_table2, StringParse},
+    parse::{parse_table2, ParserExt, StringParse},
     problem::Problem,
 };
 use adventofcode_macro::{problem_day, problem_parse};
@@ -85,7 +85,7 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day20, extra::Err<Rich<'a, char>>> {
     let open = just(".").to(Track::Open);
     let wall = just("#").to(Track::Wall);
     let maze = parse_table2(choice((start, end, open, wall)));
-    maze.map(Day20)
+    maze.map(Day20).end()
 }
 
 #[problem_day]

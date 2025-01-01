@@ -1,7 +1,7 @@
 use crate::libs::{
     cli::{new_cli_problem, CliProblem, Freeze},
     graph::{BoundedPoint, PointDirection, CARDINAL_DIRECTIONS},
-    parse::{parse_table2, StringParse},
+    parse::{parse_table2, ParserExt, StringParse},
     problem::Problem,
 };
 use adventofcode_macro::{problem_day, problem_parse};
@@ -59,7 +59,7 @@ pub struct Day12(Array2<char>);
 
 #[problem_parse]
 fn parse<'a>() -> impl Parser<'a, &'a str, Day12, extra::Err<Rich<'a, char>>> {
-    parse_table2(one_of('A'..='Z')).map(Day12)
+    parse_table2(one_of('A'..='Z')).map(Day12).end()
 }
 
 #[problem_day]

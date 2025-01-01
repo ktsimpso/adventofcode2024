@@ -7,7 +7,7 @@ use ariadne::{Color, Label, Report, ReportKind, Source};
 use chumsky::{
     error::{Error as ChumskyError, Rich},
     extra::{self, ParserExtra},
-    input::{StrInput, ValueInput},
+    input::{Input, StrInput, ValueInput},
     primitive::{any, end, just, one_of},
     text::{self, newline, Char},
     util::MaybeRef,
@@ -106,9 +106,7 @@ pub fn parse_lines<'a, T>(
 ) -> impl Parser<'a, &'a str, Vec<T>, extra::Err<Rich<'a, char>>> {
     line_parser
         .separated_by(text::newline())
-        .allow_trailing()
         .collect::<Vec<_>>()
-        .then_ignore(end())
 }
 
 pub fn parse_table<'a, T>(
@@ -147,6 +145,24 @@ pub fn parse_between_blank_lines<'a, T>(
         .allow_trailing()
         .collect::<Vec<_>>()
         .then_ignore(newline().repeated())
+}
+
+pub trait ParserExt<'a, I: Input<'a>, O, E: ParserExtra<'a, I> = extra::Default>:
+    Parser<'a, I, O, E>
+{
+    fn end(self) -> impl Parser<'a, I, O, E>
+    where
+        Self: std::marker::Sized,
+        I: ValueInput<'a>,
+        I::Token: Char,
+    {
+        self.then_ignore(newline().repeated()).then_ignore(end())
+    }
+}
+
+impl<'a, I: Input<'a>, O, E: ParserExtra<'a, I>, P: Parser<'a, I, O, E>> ParserExt<'a, I, O, E>
+    for P
+{
 }
 
 #[derive(Debug)]

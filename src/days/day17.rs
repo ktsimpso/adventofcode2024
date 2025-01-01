@@ -1,6 +1,6 @@
 use crate::libs::{
     cli::{new_cli_problem, CliProblem, Freeze},
-    parse::{parse_usize, StringParse},
+    parse::{parse_usize, ParserExt, StringParse},
     problem::{Problem, ProblemResult},
 };
 use adventofcode_macro::{problem_day, problem_parse};
@@ -8,7 +8,7 @@ use ahash::AHashMap;
 use chumsky::{
     error::Rich,
     extra,
-    prelude::{choice, end, just},
+    prelude::{choice, just},
     text, IterParser, Parser,
 };
 use clap::{Args, ValueEnum};
@@ -105,9 +105,8 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day17, extra::Err<Rich<'a, char>>> {
         .then_ignore(text::newline().repeated().at_least(1))
         .then_ignore(just("Program: "))
         .then(program)
-        .then_ignore(text::newline())
-        .then_ignore(end())
         .map(|(((a, b), c), program)| Day17 { a, b, c, program })
+        .end()
 }
 
 fn parse_instruction<'a>(

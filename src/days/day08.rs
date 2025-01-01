@@ -1,7 +1,7 @@
 use crate::libs::{
     cli::{new_cli_problem, CliProblem, Freeze},
     graph::{BoundedPoint, Direction},
-    parse::{parse_table2, StringParse},
+    parse::{parse_table2, ParserExt, StringParse},
     problem::Problem,
 };
 use adventofcode_macro::{problem_day, problem_parse};
@@ -72,7 +72,7 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day08, extra::Err<Rich<'a, char>>> {
         .and_is(just(".").not())
         .and_is(text::newline().not())
         .map(Dish::Antena);
-    parse_table2(empty.or(antena)).map(Day08)
+    parse_table2(empty.or(antena)).map(Day08).end()
 }
 
 #[problem_day]

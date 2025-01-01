@@ -1,7 +1,7 @@
 use crate::libs::{
     cli::{new_cli_problem, CliProblem, Freeze},
     graph::{BoundedPoint, CardinalDirection, Direction, CARDINAL_DIRECTIONS},
-    parse::{parse_table2, StringParse},
+    parse::{parse_table2, ParserExt, StringParse},
     problem::Problem,
 };
 use adventofcode_macro::{problem_day, problem_parse};
@@ -67,7 +67,9 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day06, extra::Err<Rich<'a, char>>> {
     let obstruction = just("#").to(Lab::Obstruction);
     let guard = just("^").to(Lab::Guard);
 
-    parse_table2(choice((open, obstruction, guard))).map(Day06)
+    parse_table2(choice((open, obstruction, guard)))
+        .map(Day06)
+        .end()
 }
 
 #[problem_day]

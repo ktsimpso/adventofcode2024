@@ -1,6 +1,6 @@
 use crate::libs::{
     cli::{new_cli_problem, CliProblem, Freeze},
-    parse::{parse_lines, StringParse},
+    parse::{parse_lines, ParserExt, StringParse},
     problem::Problem,
 };
 use adventofcode_macro::{problem_day, problem_parse};
@@ -84,6 +84,7 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day19, extra::Err<Rich<'a, char>>> {
             available_towels,
             target_towels,
         })
+        .end()
 }
 
 fn parse_towel_color<'a>() -> impl Parser<'a, &'a str, Vec<Color>, extra::Err<Rich<'a, char>>> {

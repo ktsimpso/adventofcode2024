@@ -1,6 +1,6 @@
 use crate::libs::{
     cli::{flag_arg, new_cli_problem, single_arg, CliArgs, CliProblem, Freeze},
-    parse::{parse_isize, parse_lines, StringParse},
+    parse::{parse_isize, parse_lines, ParserExt, StringParse},
     problem::Problem,
 };
 use adventofcode_macro::{problem_day, problem_parse};
@@ -119,7 +119,7 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day14, extra::Err<Rich<'a, char>>> {
             horiztonal_velocity: dx,
             vertical_velocity: dy,
         });
-    parse_lines(robot).map(Day14)
+    parse_lines(robot).map(Day14).end()
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]

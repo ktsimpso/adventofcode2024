@@ -1,6 +1,6 @@
 use crate::libs::{
     cli::{new_cli_problem, CliProblem, Freeze},
-    parse::{parse_lines, StringParse},
+    parse::{parse_lines, ParserExt, StringParse},
     problem::{Problem, ProblemResult},
 };
 use adventofcode_macro::{problem_day, problem_parse};
@@ -61,7 +61,9 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day23, extra::Err<Rich<'a, char>>> {
         .then(alpha)
         .map(|(a, b)| format!("{}{}", a, b));
 
-    parse_lines(computer.clone().then_ignore(just("-")).then(computer)).map(Day23)
+    parse_lines(computer.clone().then_ignore(just("-")).then(computer))
+        .map(Day23)
+        .end()
 }
 
 #[problem_day]

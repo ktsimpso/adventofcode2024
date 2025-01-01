@@ -1,11 +1,11 @@
 use crate::libs::{
     cli::{new_cli_problem, CliProblem, Freeze},
     graph::BoundedPoint,
-    parse::{parse_between_blank_lines, StringParse},
+    parse::{parse_between_blank_lines, parse_table2, StringParse},
     problem::Problem,
 };
 use adventofcode_macro::{problem_day, problem_parse};
-use chumsky::{error::Rich, extra, prelude::just, text, IterParser, Parser};
+use chumsky::{error::Rich, extra, prelude::just, Parser};
 use clap::Args;
 use itertools::Itertools;
 use ndarray::Array2;
@@ -43,29 +43,7 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day25, extra::Err<Rich<'a, char>>> {
     let open = just(".").to(KeyHole::Open);
     let key_hole = blocked.or(open);
 
-    let lock_key = key_hole
-        .repeated()
-        .at_least(1)
-        .collect::<Vec<_>>()
-        .separated_by(text::newline())
-        .collect::<Vec<_>>()
-        .try_map(|items, span| {
-            let columns = items.first().map_or(0, |row| row.len());
-            let rows = items.len();
-
-            Array2::from_shape_vec(
-                (rows, columns),
-                items
-                    .into_iter()
-                    .fold(Vec::with_capacity(rows * columns), |mut acc, row| {
-                        acc.extend(row);
-                        acc
-                    }),
-            )
-            .map_err(|op| Rich::custom(span, op))
-        });
-
-    parse_between_blank_lines(lock_key).map(Day25)
+    parse_between_blank_lines(parse_table2(key_hole)).map(Day25)
 }
 
 #[problem_day]

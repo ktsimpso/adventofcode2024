@@ -1,14 +1,14 @@
 use crate::libs::{
     cli::{new_cli_problem, CliProblem, Freeze},
     graph::{BoundedPoint, CardinalDirection, Direction},
-    parse::StringParse,
+    parse::{parse_lines, parse_table2, ParserExt, StringParse},
     problem::Problem,
 };
 use adventofcode_macro::{problem_day, problem_parse};
 use chumsky::{
     error::Rich,
     extra,
-    prelude::{choice, end, just},
+    prelude::{choice, just},
     text, IterParser, Parser,
 };
 use clap::Args;
@@ -71,36 +71,9 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day15, extra::Err<Rich<'a, char>>> {
     let right = just(">").to(CardinalDirection::Right);
     let direction = choice((up, down, left, right));
 
-    let warehouse = warehouse_floor
-        .repeated()
-        .at_least(1)
-        .collect::<Vec<_>>()
-        .separated_by(text::newline())
-        .collect::<Vec<_>>()
-        .try_map(|items, span| {
-            let columns = items.first().map_or(0, |row| row.len());
-            let rows = items.len();
+    let warehouse = parse_table2(warehouse_floor);
 
-            Array2::from_shape_vec(
-                (rows, columns),
-                items
-                    .into_iter()
-                    .fold(Vec::with_capacity(rows * columns), |mut acc, row| {
-                        acc.extend(row);
-                        acc
-                    }),
-            )
-            .map_err(|op| Rich::custom(span, op))
-        });
-
-    let directions = direction
-        .repeated()
-        .at_least(1)
-        .collect::<Vec<_>>()
-        .then_ignore(text::newline())
-        .repeated()
-        .at_least(1)
-        .collect::<Vec<_>>()
+    let directions = parse_lines(direction.repeated().at_least(1).collect::<Vec<_>>())
         .map(|items| items.into_iter().flatten().collect::<Vec<_>>());
 
     warehouse
@@ -110,8 +83,7 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day15, extra::Err<Rich<'a, char>>> {
             warehouse,
             movements,
         })
-        .then_ignore(text::newline().or_not())
-        .then_ignore(end())
+        .end()
 }
 
 #[problem_day]

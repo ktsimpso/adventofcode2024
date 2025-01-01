@@ -1,16 +1,11 @@
 use crate::libs::{
     cli::{new_cli_problem, CliProblem, Freeze},
-    parse::{parse_usize, StringParse},
+    parse::{parse_lines, parse_usize, ParserExt, StringParse},
     problem::Problem,
 };
 use adventofcode_macro::{problem_day, problem_parse};
 use ahash::{AHashMap, AHashSet};
-use chumsky::{
-    error::Rich,
-    extra,
-    prelude::{end, just},
-    text, IterParser, Parser,
-};
+use chumsky::{error::Rich, extra, prelude::just, text, IterParser, Parser};
 use clap::Args;
 use std::sync::LazyLock;
 
@@ -48,29 +43,17 @@ pub struct Day05 {
 
 #[problem_parse]
 fn parse<'a>() -> impl Parser<'a, &'a str, Day05, extra::Err<Rich<'a, char>>> {
-    let page_rules = parse_usize()
-        .then_ignore(just("|"))
-        .then(parse_usize())
-        .separated_by(text::newline())
-        .at_least(1)
-        .collect();
-    let page_updates = parse_usize()
-        .separated_by(just(","))
-        .at_least(1)
-        .collect()
-        .separated_by(text::newline())
-        .at_least(1)
-        .collect();
+    let page_rules = parse_lines(parse_usize().then_ignore(just("|")).then(parse_usize()));
+    let page_updates = parse_lines(parse_usize().separated_by(just(",")).at_least(1).collect());
 
     page_rules
         .then_ignore(text::newline().repeated().at_least(1))
         .then(page_updates)
-        .then_ignore(text::newline().repeated())
-        .then_ignore(end())
         .map(|(page_rules, page_updates)| Day05 {
             page_rules,
             page_updates,
         })
+        .end()
 }
 
 #[problem_day]
