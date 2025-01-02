@@ -3,7 +3,7 @@ use crate::libs::{
     parse::{parse_lines, ParserExt, StringParse},
     problem::Problem,
 };
-use adventofcode_macro::{problem_day, problem_parse};
+use adventofcode_macro::{problem_day, problem_parse, StringParse};
 use ahash::AHashMap;
 use chumsky::{
     error::Rich,
@@ -61,12 +61,17 @@ pub struct Day19 {
     target_towels: Vec<Vec<Color>>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, StringParse)]
 enum Color {
+    #[literal("w")]
     White,
+    #[literal("u")]
     Blue,
+    #[literal("b")]
     Black,
+    #[literal("r")]
     Red,
+    #[literal("g")]
     Green,
 }
 
@@ -88,13 +93,7 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day19, extra::Err<Rich<'a, char>>> {
 }
 
 fn parse_towel_color<'a>() -> impl Parser<'a, &'a str, Vec<Color>, extra::Err<Rich<'a, char>>> {
-    let white = just("w").to(Color::White);
-    let blue = just("u").to(Color::Blue);
-    let black = just("b").to(Color::Black);
-    let red = just("r").to(Color::Red);
-    let green = just("g").to(Color::Green);
-    let colors = choice((white, blue, black, red, green));
-    colors.repeated().at_least(1).collect::<Vec<_>>()
+    Color::parse().repeated().at_least(1).collect::<Vec<_>>()
 }
 
 #[problem_day]

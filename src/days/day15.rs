@@ -4,7 +4,7 @@ use crate::libs::{
     parse::{parse_lines, parse_table2, ParserExt, StringParse},
     problem::Problem,
 };
-use adventofcode_macro::{problem_day, problem_parse};
+use adventofcode_macro::{problem_day, problem_parse, StringParse};
 use chumsky::{
     error::Rich,
     extra,
@@ -48,30 +48,28 @@ pub struct Day15 {
     movements: Vec<CardinalDirection>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, StringParse)]
 enum WarehouseFloor {
+    #[literal("#")]
     Wall,
+    #[literal(".")]
     Open,
+    #[literal("O")]
     LeftBox,
     RightBox,
+    #[literal("@")]
     Robot,
 }
 
 #[problem_parse]
 fn parse<'a>() -> impl Parser<'a, &'a str, Day15, extra::Err<Rich<'a, char>>> {
-    let wall = just("#").to(WarehouseFloor::Wall);
-    let open = just(".").to(WarehouseFloor::Open);
-    let box_ = just("O").to(WarehouseFloor::LeftBox);
-    let robot = just("@").to(WarehouseFloor::Robot);
-    let warehouse_floor = choice((wall, open, box_, robot));
-
     let up = just("^").to(CardinalDirection::Up);
     let down = just("v").to(CardinalDirection::Down);
     let left = just("<").to(CardinalDirection::Left);
     let right = just(">").to(CardinalDirection::Right);
     let direction = choice((up, down, left, right));
 
-    let warehouse = parse_table2(warehouse_floor);
+    let warehouse = parse_table2(WarehouseFloor::parse());
 
     let directions = parse_lines(direction.repeated().at_least(1).collect::<Vec<_>>())
         .map(|items| items.into_iter().flatten().collect::<Vec<_>>());

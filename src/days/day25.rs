@@ -4,8 +4,8 @@ use crate::libs::{
     parse::{parse_between_blank_lines, parse_table2, StringParse},
     problem::Problem,
 };
-use adventofcode_macro::{problem_day, problem_parse};
-use chumsky::{error::Rich, extra, prelude::just, Parser};
+use adventofcode_macro::{problem_day, problem_parse, StringParse};
+use chumsky::{error::Rich, extra, prelude::just, primitive::choice, Parser};
 use clap::Args;
 use itertools::Itertools;
 use ndarray::Array2;
@@ -29,9 +29,11 @@ pub static DAY_25: LazyLock<CliProblem<Day25, CommandLineArguments, Freeze>> =
 #[derive(Args)]
 pub struct CommandLineArguments {}
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, StringParse)]
 enum KeyHole {
+    #[literal("#")]
     Blocked,
+    #[literal(".")]
     Open,
 }
 
@@ -39,11 +41,7 @@ pub struct Day25(Vec<Array2<KeyHole>>);
 
 #[problem_parse]
 fn parse<'a>() -> impl Parser<'a, &'a str, Day25, extra::Err<Rich<'a, char>>> {
-    let blocked = just("#").to(KeyHole::Blocked);
-    let open = just(".").to(KeyHole::Open);
-    let key_hole = blocked.or(open);
-
-    parse_between_blank_lines(parse_table2(key_hole)).map(Day25)
+    parse_between_blank_lines(parse_table2(KeyHole::parse())).map(Day25)
 }
 
 #[problem_day]

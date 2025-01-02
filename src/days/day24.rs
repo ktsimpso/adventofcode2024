@@ -3,7 +3,7 @@ use crate::libs::{
     parse::{parse_alphanumeric, parse_lines, ParserExt, StringParse},
     problem::{Problem, ProblemResult},
 };
-use adventofcode_macro::{problem_day, problem_parse};
+use adventofcode_macro::{problem_day, problem_parse, StringParse};
 use ahash::{AHashMap, AHashSet};
 use chumsky::{
     error::Rich,
@@ -63,10 +63,13 @@ struct Gate {
     gate_type: GateType,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, StringParse)]
 enum GateType {
+    #[literal("AND")]
     And,
+    #[literal("OR")]
     Or,
+    #[literal("XOR")]
     Xor,
 }
 
@@ -88,15 +91,10 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day24, extra::Err<Rich<'a, char>>> {
         .at_least(1)
         .collect::<Vec<_>>();
 
-    let and = just("AND").to(GateType::And);
-    let or = just("OR").to(GateType::Or);
-    let xor = just("XOR").to(GateType::Xor);
-    let gate_type = choice((and, or, xor));
-
     let gate = parse_alphanumeric()
         .map(|s: &'a str| s.to_string())
         .then_ignore(just(" "))
-        .then(gate_type)
+        .then(GateType::parse())
         .then_ignore(just(" "))
         .then(parse_alphanumeric().map(|s: &'a str| s.to_string()))
         .then_ignore(just(" -> "))

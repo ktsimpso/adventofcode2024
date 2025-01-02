@@ -3,7 +3,7 @@ use crate::libs::{
     parse::{parse_lines, ParserExt, StringParse},
     problem::Problem,
 };
-use adventofcode_macro::{problem_day, problem_parse};
+use adventofcode_macro::{problem_day, problem_parse, StringParse};
 use ahash::AHashMap;
 use chumsky::{
     error::Rich,
@@ -49,38 +49,34 @@ pub struct Day21(Vec<Vec<Code>>);
 
 #[problem_parse]
 fn parse<'a>() -> impl Parser<'a, &'a str, Day21, extra::Err<Rich<'a, char>>> {
-    let zero = just("0").to(Code::Zero);
-    let one = just("1").to(Code::One);
-    let two = just("2").to(Code::Two);
-    let three = just("3").to(Code::Three);
-    let four = just("4").to(Code::Four);
-    let five = just("5").to(Code::Five);
-    let six = just("6").to(Code::Six);
-    let seven = just("7").to(Code::Seven);
-    let eight = just("8").to(Code::Eight);
-    let nine = just("9").to(Code::Nine);
-    let activate = just("A").to(Code::Activate);
-    let button = choice((
-        zero, one, two, three, four, five, six, seven, eight, nine, activate,
-    ));
-
-    parse_lines(button.repeated().at_least(1).collect::<Vec<_>>())
+    parse_lines(Code::parse().repeated().at_least(1).collect::<Vec<_>>())
         .map(Day21)
         .end()
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, StringParse)]
 enum Code {
+    #[literal("0")]
     Zero,
+    #[literal("1")]
     One,
+    #[literal("2")]
     Two,
+    #[literal("3")]
     Three,
+    #[literal("4")]
     Four,
+    #[literal("5")]
     Five,
+    #[literal("6")]
     Six,
+    #[literal("7")]
     Seven,
+    #[literal("8")]
     Eight,
+    #[literal("9")]
     Nine,
+    #[literal("A")]
     Activate,
 }
 

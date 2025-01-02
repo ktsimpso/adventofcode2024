@@ -1,7 +1,7 @@
 use proc_macro_error::abort;
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
-use syn::{FnArg, ItemFn, ReturnType, Stmt, Type, parse2};
+use syn::{FnArg, Ident, ItemEnum, ItemFn, LitStr, ReturnType, Stmt, Type, parse_str, parse2};
 
 pub fn problem_day_core(args: TokenStream, input: TokenStream) -> TokenStream {
     if !args.is_empty() {
@@ -181,5 +181,84 @@ fn implements_string_parse() {
     assert_eq!(
         after.to_string(),
         "impl StringParse for Day26 { fn parse < 'a > () -> impl Parser < 'a , & 'a str , Self , extra :: Err < Rich < 'a , char > > > { just (\"\") . to (Day26) } }"
+    );
+}
+
+pub fn enum_parse_core(item: TokenStream) -> TokenStream {
+    let t = match parse2::<ItemEnum>(item) {
+        Ok(t) => t,
+        Err(e) => return e.to_compile_error(),
+    };
+
+    let name = t.ident;
+    let (impl_generics, ty_generics, where_clause) = t.generics.split_for_impl();
+    let implementation_data = t
+        .variants
+        .iter()
+        .filter_map(|variant| {
+            let enum_identity = variant.ident.clone();
+            let var_identity =
+                parse_str::<Ident>(&enum_identity.to_string().to_lowercase()).expect("Works");
+            let literal = variant.attrs.iter().find_map(|attribute| {
+                if !attribute.path().is_ident("literal") {
+                    return None;
+                };
+
+                Some(attribute.parse_args::<LitStr>())
+            });
+
+            literal
+                .map(|lit_result| lit_result.map(|literal| (literal, var_identity, enum_identity)))
+        })
+        .collect::<Result<Vec<_>, _>>();
+
+    let (assignments, choices) = match implementation_data {
+        Ok(variants) => variants
+            .into_iter()
+            .map(|(literal, var, ident)| {
+                (
+                    quote! {
+                        let #var = just(#literal).to(Self::#ident);
+                    },
+                    var,
+                )
+            })
+            .fold(
+                (Vec::new(), Vec::new()),
+                |(mut assignments, mut choices), (assignment, choice)| {
+                    assignments.push(assignment);
+                    choices.push(choice);
+                    (assignments, choices)
+                },
+            ),
+        Err(err) => return err.to_compile_error(),
+    };
+
+    quote! {
+        impl #impl_generics StringParse for #name #ty_generics #where_clause {
+            fn parse<'a>() -> impl Parser<'a, &'a str, Self, extra::Err<Rich<'a, char>>> {
+                #(#assignments)*
+                choice((#(#choices),*))
+            }
+        }
+    }
+}
+
+#[test]
+fn adds_enum_parse_function() {
+    let before = quote! {
+        enum Foo {
+            #[literal("b")]
+            Bar,
+            #[literal("az")]
+            Baz,
+            #[literal("q")]
+            Qux,
+        }
+    };
+    let after = enum_parse_core(before);
+    assert_eq!(
+        after.to_string(),
+        "impl StringParse for Foo { fn parse < 'a > () -> impl Parser < 'a , & 'a str , Self , extra :: Err < Rich < 'a , char >> > { let bar = just (\"b\") . to (Self :: Bar) ; let baz = just (\"az\") . to (Self :: Baz) ; let qux = just (\"q\") . to (Self :: Qux) ; choice ((bar , baz , qux)) } }"
     );
 }

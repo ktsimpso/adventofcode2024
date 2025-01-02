@@ -7,7 +7,7 @@ use crate::libs::{
     parse::{parse_table2, ParserExt, StringParse},
     problem::Problem,
 };
-use adventofcode_macro::{problem_day, problem_parse};
+use adventofcode_macro::{problem_day, problem_parse, StringParse};
 use ahash::AHashMap;
 use chumsky::{
     error::Rich,
@@ -68,11 +68,15 @@ pub struct CommandLineArguments {
     parallel: bool,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, StringParse)]
 enum Track {
+    #[literal("S")]
     Start,
+    #[literal("E")]
     End,
+    #[literal(".")]
     Open,
+    #[literal("#")]
     Wall,
 }
 
@@ -80,12 +84,7 @@ pub struct Day20(Array2<Track>);
 
 #[problem_parse]
 fn parse<'a>() -> impl Parser<'a, &'a str, Day20, extra::Err<Rich<'a, char>>> {
-    let start = just("S").to(Track::Start);
-    let end = just("E").to(Track::End);
-    let open = just(".").to(Track::Open);
-    let wall = just("#").to(Track::Wall);
-    let maze = parse_table2(choice((start, end, open, wall)));
-    maze.map(Day20).end()
+    parse_table2(Track::parse()).map(Day20).end()
 }
 
 #[problem_day]

@@ -3,7 +3,7 @@ use crate::libs::{
     parse::{parse_usize, ParserExt, StringParse},
     problem::{Problem, ProblemResult},
 };
-use adventofcode_macro::{problem_day, problem_parse};
+use adventofcode_macro::{problem_day, problem_parse, StringParse};
 use ahash::AHashMap;
 use chumsky::{
     error::Rich,
@@ -52,15 +52,23 @@ pub struct CommandLineArguments {
     program_execution: ProgramExecution,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, StringParse)]
 enum Instruction {
+    #[literal("0")]
     Adv,
+    #[literal("1")]
     Bxl,
+    #[literal("2")]
     Bst,
+    #[literal("3")]
     Jnz,
+    #[literal("4")]
     Bxc,
+    #[literal("5")]
     Out,
+    #[literal("6")]
     Bdv,
+    #[literal("7")]
     Cdv,
 }
 
@@ -111,16 +119,9 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day17, extra::Err<Rich<'a, char>>> {
 
 fn parse_instruction<'a>(
 ) -> impl Parser<'a, &'a str, (Instruction, usize), extra::Err<Rich<'a, char>>> {
-    let adv = just("0").to(Instruction::Adv);
-    let bxl = just("1").to(Instruction::Bxl);
-    let bst = just("2").to(Instruction::Bst);
-    let jnz = just("3").to(Instruction::Jnz);
-    let bxc = just("4").to(Instruction::Bxc);
-    let out = just("5").to(Instruction::Out);
-    let bdv = just("6").to(Instruction::Bdv);
-    let cdv = just("7").to(Instruction::Cdv);
-    let opcode = choice((adv, bxl, bst, jnz, bxc, out, bdv, cdv));
-    opcode.then_ignore(just(",")).then(parse_usize())
+    Instruction::parse()
+        .then_ignore(just(","))
+        .then(parse_usize())
 }
 
 #[problem_day]

@@ -4,7 +4,7 @@ use crate::libs::{
     parse::{parse_table2, ParserExt, StringParse},
     problem::Problem,
 };
-use adventofcode_macro::{problem_day, problem_parse};
+use adventofcode_macro::{problem_day, problem_parse, StringParse};
 use chumsky::{
     error::Rich,
     extra,
@@ -54,22 +54,19 @@ pub struct CommandLineArguments {
 
 pub struct Day06(Array2<Lab>);
 
-#[derive(Clone)]
+#[derive(Clone, StringParse)]
 enum Lab {
+    #[literal(".")]
     Open,
+    #[literal("#")]
     Obstruction,
+    #[literal("^")]
     Guard,
 }
 
 #[problem_parse]
 fn parse<'a>() -> impl Parser<'a, &'a str, Day06, extra::Err<Rich<'a, char>>> {
-    let open = just(".").to(Lab::Open);
-    let obstruction = just("#").to(Lab::Obstruction);
-    let guard = just("^").to(Lab::Guard);
-
-    parse_table2(choice((open, obstruction, guard)))
-        .map(Day06)
-        .end()
+    parse_table2(Lab::parse()).map(Day06).end()
 }
 
 #[problem_day]
