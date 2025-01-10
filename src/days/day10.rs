@@ -1,15 +1,16 @@
 use crate::libs::{
     cli::{new_cli_problem, CliProblem, Freeze},
-    graph::BoundedPoint,
+    graph::{breadth_first_search, PlanarCoordinate},
     parse::{parse_digit, parse_table2, ParserExt, StringParse},
     problem::Problem,
 };
 use adventofcode_macro::{problem_day, problem_parse};
-use ahash::{AHashMap, AHashSet};
+use ahash::AHashSet;
 use chumsky::{error::Rich, extra, Parser};
 use clap::{Args, ValueEnum};
+use either::Either;
 use ndarray::Array2;
-use std::{collections::VecDeque, sync::LazyLock};
+use std::{collections::VecDeque, iter, sync::LazyLock};
 
 pub static DAY_10: LazyLock<CliProblem<Day10, CommandLineArguments, Freeze>> =
     LazyLock::new(|| {
@@ -63,7 +64,7 @@ fn run(Day10(input): Day10, arguments: &CommandLineArguments) -> usize {
             &input,
             |point| AHashSet::from([*point]),
             |point, peaks, score| {
-                let trail_endings = score.entry(*point).or_default();
+                let trail_endings = score.get_mut(*point).expect("exists");
                 trail_endings.extend(peaks.clone());
             },
             |score| score.len(),
@@ -71,63 +72,65 @@ fn run(Day10(input): Day10, arguments: &CommandLineArguments) -> usize {
         ScoringSystem::UniquePaths => find_trail_path_score(
             &input,
             |_point| 1,
-            |point, peaks, score| *score.entry(*point).or_insert(0) += peaks,
+            |point, peaks, score| *score.get_mut(*point).expect("exists") += peaks,
             |score| *score,
         ),
     }
 }
 
-fn find_trail_path_score<T: Clone, F, G, H>(
+fn find_trail_path_score<T: Clone + Default, F, G, H>(
     mountain: &Array2<u32>,
     init_score: F,
     mut add_to_score: G,
     collect_score: H,
 ) -> usize
 where
-    F: Fn(&BoundedPoint) -> T,
-    G: FnMut(&BoundedPoint, &T, &mut AHashMap<BoundedPoint, T>),
+    F: Fn(&(usize, usize)) -> T,
+    G: FnMut(&(usize, usize), &T, &mut Array2<T>),
     H: Fn(&T) -> usize,
 {
-    let (max_x, max_y) = BoundedPoint::maxes_from_table(mountain);
-
-    let mut score = AHashMap::new();
-    let mut queue: VecDeque<BoundedPoint> = mountain
+    let mut score = Array2::from_elem(mountain.dim(), T::default());
+    let queue: VecDeque<(usize, usize)> = mountain
         .indexed_iter()
         .filter(|(_, value)| **value == 9)
-        .map(|(index, _)| BoundedPoint::from_table_index(index, max_x, max_y))
+        .map(|(index, _)| index)
         .inspect(|top| {
-            score.insert(*top, init_score(top));
+            *score.get_mut(*top).expect("Exists") = init_score(top);
         })
         .collect();
 
     let mut trail_heads = AHashSet::new();
     let mut visited = Array2::from_elem(mountain.dim(), false);
 
-    while let Some(location) = queue.pop_front() {
-        let visit = location.get_mut_from_table(&mut visited).expect("Exists");
-        if *visit {
-            continue;
-        }
-        *visit = true;
+    breadth_first_search(
+        queue,
+        &mut visited,
+        |_| None::<()>,
+        |location| {
+            let height = mountain.get(*location).expect("Valid Index");
+            if *height == 0 {
+                trail_heads.insert(*location);
+                return Either::Left(iter::empty::<(usize, usize)>());
+            }
 
-        let height = location.get_from_table(mountain).expect("Valid index");
-        if *height == 0 {
-            trail_heads.insert(location);
-            continue;
-        }
-        let peaks = score.get(&location).expect("Exists").clone();
-
-        location
-            .into_iter_cardinal_adjacent()
-            .filter(|adjacent| *adjacent.get_from_table(mountain).expect("exists") == height - 1)
-            .for_each(|valid_step| {
-                add_to_score(&valid_step, &peaks, &mut score);
-                queue.push_back(valid_step);
-            });
-    }
+            Either::Right(
+                location
+                    .into_iter_cardinal_adjacent()
+                    .filter(move |adjacent| {
+                        mountain
+                            .get(*adjacent)
+                            .is_some_and(|position| *position == height - 1)
+                    }),
+            )
+        },
+        |location, valid_step| {
+            let peaks = score.get(*location).expect("Exists").clone();
+            add_to_score(valid_step, &peaks, &mut score);
+        },
+    );
 
     trail_heads
         .into_iter()
-        .map(|trail_head| collect_score(score.get(&trail_head).expect("Exists")))
+        .map(|trail_head| collect_score(score.get(trail_head).expect("Exists")))
         .sum()
 }

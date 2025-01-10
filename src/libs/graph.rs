@@ -1,3 +1,6 @@
+use std::collections::{HashSet, VecDeque};
+
+use ahash::AHashSet;
 use ndarray::Array2;
 use subenum::subenum;
 
@@ -90,55 +93,6 @@ impl BoundedPoint {
         )
     }
 
-    pub fn jump_to(
-        &self,
-        horizontal_distance: usize,
-        horizontal_direction: HorizontalDirection,
-        vertical_distance: usize,
-        vertical_direction: VerticalDirection,
-    ) -> Option<BoundedPoint> {
-        match horizontal_direction {
-            HorizontalDirection::Left => {
-                if self.x >= horizontal_distance {
-                    Some(self.x - horizontal_distance)
-                } else {
-                    None
-                }
-            }
-            HorizontalDirection::Right => {
-                if self.x + horizontal_distance <= self.max_x {
-                    Some(self.x + horizontal_distance)
-                } else {
-                    None
-                }
-            }
-        }
-        .and_then(|x: usize| match vertical_direction {
-            VerticalDirection::Up => {
-                if self.y >= vertical_distance {
-                    Some(BoundedPoint {
-                        x,
-                        y: self.y - vertical_distance,
-                        ..*self
-                    })
-                } else {
-                    None
-                }
-            }
-            VerticalDirection::Down => {
-                if self.y + vertical_distance <= self.max_y {
-                    Some(BoundedPoint {
-                        x,
-                        y: self.y + vertical_distance,
-                        ..*self
-                    })
-                } else {
-                    None
-                }
-            }
-        })
-    }
-
     pub fn stride_to(
         &self,
         distance: usize,
@@ -205,106 +159,10 @@ impl BoundedPoint {
         }
     }
 
-    pub fn into_iter_cardinal_adjacent(self) -> CardinalAdjacentIterator {
-        CardinalAdjacentIterator {
-            point: self,
-            index: 0,
-        }
-    }
-
     pub fn into_iter_radial_adjacent(self) -> RadialAdjacentIterator {
         RadialAdjacentIterator {
             point: self,
             index: 0,
-        }
-    }
-
-    pub fn get_adjacent(self, point_direction: impl Into<PointDirection>) -> Option<BoundedPoint> {
-        match point_direction.into() {
-            PointDirection::Up => {
-                if self.y > 0 {
-                    Some(BoundedPoint {
-                        y: self.y - 1,
-                        ..self
-                    })
-                } else {
-                    None
-                }
-            }
-            PointDirection::Down => {
-                if self.y < self.max_y {
-                    Some(BoundedPoint {
-                        y: self.y + 1,
-                        ..self
-                    })
-                } else {
-                    None
-                }
-            }
-            PointDirection::Left => {
-                if self.x > 0 {
-                    Some(BoundedPoint {
-                        x: self.x - 1,
-                        ..self
-                    })
-                } else {
-                    None
-                }
-            }
-            PointDirection::Right => {
-                if self.x < self.max_x {
-                    Some(BoundedPoint {
-                        x: self.x + 1,
-                        ..self
-                    })
-                } else {
-                    None
-                }
-            }
-            PointDirection::UpRight => {
-                if self.y > 0 && self.x < self.max_x {
-                    Some(BoundedPoint {
-                        x: self.x + 1,
-                        y: self.y - 1,
-                        ..self
-                    })
-                } else {
-                    None
-                }
-            }
-            PointDirection::UpLeft => {
-                if self.y > 0 && self.x > 0 {
-                    Some(BoundedPoint {
-                        x: self.x - 1,
-                        y: self.y - 1,
-                        ..self
-                    })
-                } else {
-                    None
-                }
-            }
-            PointDirection::DownRight => {
-                if self.y < self.max_y && self.x < self.max_x {
-                    Some(BoundedPoint {
-                        x: self.x + 1,
-                        y: self.y + 1,
-                        ..self
-                    })
-                } else {
-                    None
-                }
-            }
-            PointDirection::DownLeft => {
-                if self.y < self.max_y && self.x > 0 {
-                    Some(BoundedPoint {
-                        x: self.x - 1,
-                        y: self.y + 1,
-                        ..self
-                    })
-                } else {
-                    None
-                }
-            }
         }
     }
 
@@ -346,6 +204,153 @@ impl BoundedPoint {
                 y: if self.y < self.max_y { self.y + 1 } else { 0 },
                 ..self
             },
+        }
+    }
+}
+
+impl PlanarCoordinate for BoundedPoint {
+    fn into_iter_cardinal_adjacent(self) -> impl Iterator<Item = Self> {
+        CardinalAdjacentIterator {
+            point: self,
+            index: 0,
+        }
+    }
+
+    fn jump_to(
+        &self,
+        horizontal_distance: usize,
+        horizontal_direction: HorizontalDirection,
+        vertical_distance: usize,
+        vertical_direction: VerticalDirection,
+    ) -> Option<BoundedPoint> {
+        match horizontal_direction {
+            HorizontalDirection::Left => {
+                if self.x >= horizontal_distance {
+                    Some(self.x - horizontal_distance)
+                } else {
+                    None
+                }
+            }
+            HorizontalDirection::Right => {
+                if self.x + horizontal_distance <= self.max_x {
+                    Some(self.x + horizontal_distance)
+                } else {
+                    None
+                }
+            }
+        }
+        .and_then(|x: usize| match vertical_direction {
+            VerticalDirection::Up => {
+                if self.y >= vertical_distance {
+                    Some(BoundedPoint {
+                        x,
+                        y: self.y - vertical_distance,
+                        ..*self
+                    })
+                } else {
+                    None
+                }
+            }
+            VerticalDirection::Down => {
+                if self.y + vertical_distance <= self.max_y {
+                    Some(BoundedPoint {
+                        x,
+                        y: self.y + vertical_distance,
+                        ..*self
+                    })
+                } else {
+                    None
+                }
+            }
+        })
+    }
+
+    fn get_adjacent(&self, point_direction: impl Into<PointDirection>) -> Option<BoundedPoint> {
+        match point_direction.into() {
+            PointDirection::Up => {
+                if self.y > 0 {
+                    Some(BoundedPoint {
+                        y: self.y - 1,
+                        ..*self
+                    })
+                } else {
+                    None
+                }
+            }
+            PointDirection::Down => {
+                if self.y < self.max_y {
+                    Some(BoundedPoint {
+                        y: self.y + 1,
+                        ..*self
+                    })
+                } else {
+                    None
+                }
+            }
+            PointDirection::Left => {
+                if self.x > 0 {
+                    Some(BoundedPoint {
+                        x: self.x - 1,
+                        ..*self
+                    })
+                } else {
+                    None
+                }
+            }
+            PointDirection::Right => {
+                if self.x < self.max_x {
+                    Some(BoundedPoint {
+                        x: self.x + 1,
+                        ..*self
+                    })
+                } else {
+                    None
+                }
+            }
+            PointDirection::UpRight => {
+                if self.y > 0 && self.x < self.max_x {
+                    Some(BoundedPoint {
+                        x: self.x + 1,
+                        y: self.y - 1,
+                        ..*self
+                    })
+                } else {
+                    None
+                }
+            }
+            PointDirection::UpLeft => {
+                if self.y > 0 && self.x > 0 {
+                    Some(BoundedPoint {
+                        x: self.x - 1,
+                        y: self.y - 1,
+                        ..*self
+                    })
+                } else {
+                    None
+                }
+            }
+            PointDirection::DownRight => {
+                if self.y < self.max_y && self.x < self.max_x {
+                    Some(BoundedPoint {
+                        x: self.x + 1,
+                        y: self.y + 1,
+                        ..*self
+                    })
+                } else {
+                    None
+                }
+            }
+            PointDirection::DownLeft => {
+                if self.y < self.max_y && self.x > 0 {
+                    Some(BoundedPoint {
+                        x: self.x - 1,
+                        y: self.y + 1,
+                        ..*self
+                    })
+                } else {
+                    None
+                }
+            }
         }
     }
 }
@@ -719,5 +724,300 @@ impl Iterator for JumpingIterator {
         } else {
             None
         }
+    }
+}
+
+pub trait PlanarCoordinate {
+    fn into_iter_cardinal_adjacent(self) -> impl Iterator<Item = Self>;
+
+    fn jump_to(
+        &self,
+        horizontal_distance: usize,
+        horizontal_direction: HorizontalDirection,
+        vertical_distance: usize,
+        vertical_direction: VerticalDirection,
+    ) -> Option<Self>
+    where
+        Self: Sized;
+
+    fn get_adjacent(&self, point_direction: impl Into<PointDirection>) -> Option<Self>
+    where
+        Self: Sized;
+}
+
+impl PlanarCoordinate for (usize, usize) {
+    fn into_iter_cardinal_adjacent(self) -> impl Iterator<Item = Self> {
+        [
+            Some((self.0 + 1, self.1)),
+            self.0.checked_sub(1).map(|result| (result, self.1)),
+            Some((self.0, self.1 + 1)),
+            self.1.checked_sub(1).map(|result| (self.0, result)),
+        ]
+        .into_iter()
+        .flatten()
+    }
+
+    fn jump_to(
+        &self,
+        horizontal_distance: usize,
+        horizontal_direction: HorizontalDirection,
+        vertical_distance: usize,
+        vertical_direction: VerticalDirection,
+    ) -> Option<Self> {
+        match horizontal_direction {
+            HorizontalDirection::Left => self.1.checked_sub(horizontal_distance),
+            HorizontalDirection::Right => Some(self.1 + horizontal_distance),
+        }
+        .and_then(|x| {
+            match vertical_direction {
+                VerticalDirection::Up => self.0.checked_sub(vertical_distance),
+                VerticalDirection::Down => Some(self.0 + vertical_distance),
+            }
+            .map(|y| (y, x))
+        })
+    }
+
+    fn get_adjacent(&self, point_direction: impl Into<PointDirection>) -> Option<Self> {
+        match point_direction.into() {
+            PointDirection::Up => self.0.checked_sub(1).map(|result| (result, self.1)),
+            PointDirection::UpRight => self.0.checked_sub(1).map(|result| (result, self.1 + 1)),
+            PointDirection::UpLeft => self
+                .0
+                .checked_sub(1)
+                .and_then(|y| self.1.checked_sub(1).map(|x| (y, x))),
+            PointDirection::Down => Some((self.0 + 1, self.1)),
+            PointDirection::DownRight => Some((self.0 + 1, self.1 + 1)),
+            PointDirection::DownLeft => self.1.checked_sub(1).map(|result| (self.0 + 1, result)),
+            PointDirection::Left => self.1.checked_sub(1).map(|result| (self.0, result)),
+            PointDirection::Right => Some((self.0, self.1 + 1)),
+        }
+    }
+}
+
+pub fn breadth_first_search<'a, T, I, R, F, G, H>(
+    mut queue: VecDeque<T>,
+    visitor: &mut impl Visitor<T>,
+    mut first_visit: H,
+    mut get_adjacent: F,
+    mut on_insert: G,
+) -> Option<R>
+where
+    F: FnMut(&T) -> I,
+    I: Iterator<Item = T> + 'a,
+    G: FnMut(&T, &T),
+    H: FnMut(&T) -> Option<R>,
+{
+    while let Some(value) = queue.pop_front() {
+        if visitor.visit(&value) {
+            continue;
+        }
+
+        let stop = first_visit(&value);
+        if stop.is_some() {
+            return stop;
+        }
+
+        get_adjacent(&value)
+            .filter(|adjacent| !visitor.has_visited(adjacent))
+            .for_each(|adjacent| {
+                on_insert(&value, &adjacent);
+                queue.push_back(adjacent);
+            })
+    }
+
+    None
+}
+
+pub trait Visitor<K> {
+    fn visit(&mut self, key: &K) -> bool;
+
+    fn has_visited(&self, key: &K) -> bool;
+}
+
+impl Visitor<(usize, usize)> for Array2<bool> {
+    fn visit(&mut self, key: &(usize, usize)) -> bool {
+        let visit = self.get_mut(*key).expect("Exists");
+        if *visit {
+            return true;
+        }
+        *visit = true;
+        false
+    }
+
+    fn has_visited(&self, key: &(usize, usize)) -> bool {
+        self.get(*key).is_some_and(|x| *x)
+    }
+}
+
+impl<T> Visitor<((usize, usize), T)> for Array2<bool> {
+    fn visit(&mut self, (key, _): &((usize, usize), T)) -> bool {
+        let visit = self.get_mut(*key).expect("Exists");
+        if *visit {
+            return true;
+        }
+        *visit = true;
+        false
+    }
+
+    fn has_visited(&self, (key, _): &((usize, usize), T)) -> bool {
+        self.get(*key).is_some_and(|x| *x)
+    }
+}
+
+impl<T: Clone> Visitor<((usize, usize), T)> for Array2<Option<T>> {
+    fn visit(&mut self, (key, value): &((usize, usize), T)) -> bool {
+        let visit = self.get_mut(*key).expect("Exists");
+        if visit.is_some() {
+            return true;
+        }
+        *visit = Some(value.clone());
+        false
+    }
+
+    fn has_visited(&self, (key, _): &((usize, usize), T)) -> bool {
+        self.get(*key).is_some_and(|x| x.is_some())
+    }
+}
+
+impl Visitor<BoundedPoint> for Array2<bool> {
+    fn visit(&mut self, key: &BoundedPoint) -> bool {
+        let visit = key.get_mut_from_table(self).expect("Exists");
+        if *visit {
+            return true;
+        }
+        *visit = true;
+        false
+    }
+
+    fn has_visited(&self, key: &BoundedPoint) -> bool {
+        key.get_from_table(self).is_some_and(|x| *x)
+    }
+}
+
+impl<T> Visitor<(BoundedPoint, T)> for Array2<bool> {
+    fn visit(&mut self, (key, _): &(BoundedPoint, T)) -> bool {
+        let visit = key.get_mut_from_table(self).expect("Exists");
+        if *visit {
+            return true;
+        }
+        *visit = true;
+        false
+    }
+
+    fn has_visited(&self, (key, _): &(BoundedPoint, T)) -> bool {
+        key.get_from_table(self).is_some_and(|x| *x)
+    }
+}
+
+impl<T: Clone> Visitor<(BoundedPoint, T)> for Array2<Option<T>> {
+    fn visit(&mut self, (key, value): &(BoundedPoint, T)) -> bool {
+        let visit = key.get_mut_from_table(self).expect("Exists");
+        if visit.is_some() {
+            return true;
+        }
+        *visit = Some(value.clone());
+        false
+    }
+
+    fn has_visited(&self, (key, _): &(BoundedPoint, T)) -> bool {
+        key.get_from_table(self).is_some_and(|x| x.is_some())
+    }
+}
+
+impl<T> Visitor<T> for AHashSet<T>
+where
+    T: Eq + std::hash::Hash + Clone,
+{
+    fn visit(&mut self, key: &T) -> bool {
+        if self.contains(key) {
+            return true;
+        }
+        self.insert(key.clone());
+        false
+    }
+
+    fn has_visited(&self, key: &T) -> bool {
+        self.contains(key)
+    }
+}
+
+impl<T, U> Visitor<(T, U)> for AHashSet<T>
+where
+    T: Eq + std::hash::Hash + Clone,
+{
+    fn visit(&mut self, (key, _): &(T, U)) -> bool {
+        if self.contains(key) {
+            return true;
+        }
+        self.insert(key.clone());
+        false
+    }
+
+    fn has_visited(&self, (key, _): &(T, U)) -> bool {
+        self.contains(key)
+    }
+}
+
+impl<T> Visitor<T> for HashSet<T>
+where
+    T: Eq + std::hash::Hash + Clone,
+{
+    fn visit(&mut self, key: &T) -> bool {
+        if self.contains(key) {
+            return true;
+        }
+        self.insert(key.clone());
+        false
+    }
+
+    fn has_visited(&self, key: &T) -> bool {
+        self.contains(key)
+    }
+}
+
+impl<T, U> Visitor<(T, U)> for HashSet<T>
+where
+    T: Eq + std::hash::Hash + Clone,
+{
+    fn visit(&mut self, (key, _): &(T, U)) -> bool {
+        if self.contains(key) {
+            return true;
+        }
+        self.insert(key.clone());
+        false
+    }
+
+    fn has_visited(&self, (key, _): &(T, U)) -> bool {
+        self.contains(key)
+    }
+}
+
+impl Visitor<usize> for Vec<bool> {
+    fn visit(&mut self, key: &usize) -> bool {
+        let visit = self.get_mut(*key).expect("Exists");
+        if *visit {
+            return true;
+        }
+        *visit = true;
+        false
+    }
+
+    fn has_visited(&self, key: &usize) -> bool {
+        self.get(*key).is_some_and(|x| *x)
+    }
+}
+
+impl<T> Visitor<(usize, T)> for Vec<bool> {
+    fn visit(&mut self, (key, _): &(usize, T)) -> bool {
+        let visit = self.get_mut(*key).expect("Exists");
+        if *visit {
+            return true;
+        }
+        *visit = true;
+        false
+    }
+
+    fn has_visited(&self, (key, _): &(usize, T)) -> bool {
+        self.get(*key).is_some_and(|x| *x)
     }
 }

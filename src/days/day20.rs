@@ -1,14 +1,13 @@
 use crate::libs::{
     cli::{new_cli_problem, CliProblem, Freeze},
     graph::{
-        BoundedPoint, CardinalDirection, HorizontalDirection, VerticalDirection,
-        CARDINAL_DIRECTIONS,
+        breadth_first_search, CardinalDirection, HorizontalDirection, PlanarCoordinate,
+        VerticalDirection, CARDINAL_DIRECTIONS,
     },
     parse::{parse_table2, ParserExt, StringParse},
     problem::Problem,
 };
 use adventofcode_macro::{problem_day, problem_parse, StringParse};
-use ahash::AHashMap;
 use chumsky::{
     error::Rich,
     extra,
@@ -17,7 +16,7 @@ use chumsky::{
 };
 use clap::Args;
 use ndarray::Array2;
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+use rayon::iter::{ParallelBridge, ParallelIterator};
 use std::{collections::VecDeque, sync::LazyLock};
 
 pub static DAY_20: LazyLock<CliProblem<Day20, CommandLineArguments, Freeze>> =
@@ -89,16 +88,15 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day20, extra::Err<Rich<'a, char>>> {
 
 #[problem_day]
 fn run(Day20(input): Day20, arguments: &CommandLineArguments) -> usize {
-    let (max_x, max_y) = BoundedPoint::maxes_from_table(&input);
     let start = input
         .indexed_iter()
         .find(|(_, tile)| matches!(tile, Track::Start))
-        .map(|(index, _)| BoundedPoint::from_table_index(index, max_x, max_y))
+        .map(|(index, _)| index)
         .expect("Exists");
     let end = input
         .indexed_iter()
         .find(|(_, tile)| matches!(tile, Track::End))
-        .map(|(index, _)| BoundedPoint::from_table_index(index, max_x, max_y))
+        .map(|(index, _)| index)
         .expect("Exists");
 
     let path = shortest_path_full(&start, &end, &input);
@@ -125,38 +123,39 @@ fn generate_manhattan_quarter_points(distance: usize) -> Vec<(usize, usize)> {
 }
 
 fn best_shortcuts(
-    end: &BoundedPoint,
+    end: &(usize, usize),
     cheat_threshold: usize,
     target_savings: usize,
-    path: &AHashMap<BoundedPoint, usize>,
+    path: &Array2<Option<usize>>,
     parallel: bool,
 ) -> usize {
-    let baseline = path.get(end).expect("exists");
+    let baseline = path.get(*end).expect("exists").expect("exists");
     let points = generate_manhattan_quarter_points(cheat_threshold);
     if parallel {
-        path.par_iter()
-            .filter(|(tile, _)| *tile != end)
+        path.indexed_iter()
+            .par_bridge()
+            .filter_map(|(tile, value)| value.filter(|_| tile != *end).map(|length| (tile, length)))
             .map(|(tile, length)| {
-                worthy_cheats_from_tile(tile, length, baseline, target_savings, &points, path)
+                worthy_cheats_from_tile(&tile, &length, &baseline, target_savings, &points, path)
             })
             .sum()
     } else {
-        path.iter()
-            .filter(|(tile, _)| *tile != end)
+        path.indexed_iter()
+            .filter_map(|(tile, value)| value.filter(|_| tile != *end).map(|length| (tile, length)))
             .map(|(tile, length)| {
-                worthy_cheats_from_tile(tile, length, baseline, target_savings, &points, path)
+                worthy_cheats_from_tile(&tile, &length, &baseline, target_savings, &points, path)
             })
             .sum()
     }
 }
 
 fn worthy_cheats_from_tile(
-    tile: &BoundedPoint,
+    tile: &(usize, usize),
     length: &usize,
     baseline: &usize,
     target_savings: usize,
     points: &[(usize, usize)],
-    path: &AHashMap<BoundedPoint, usize>,
+    path: &Array2<Option<usize>>,
 ) -> usize {
     CARDINAL_DIRECTIONS
         .iter()
@@ -178,8 +177,11 @@ fn worthy_cheats_from_tile(
                     tile.jump_to(p2, horizontal, p1, veritcal)
                         .map(|new_tile| (p1 + p2, new_tile))
                 })
-                .filter_map(|(distance, point)| path.get(&point).map(|length| (distance, length)))
-                .filter(|(_, other_length)| length < *other_length)
+                .filter_map(|(distance, point)| {
+                    path.get(point)
+                        .and_then(|length| length.map(|length| (distance, length)))
+                })
+                .filter(|(_, other_length)| length < other_length)
                 .map(|(distance, other_length)| {
                     let remaining_length = baseline - other_length;
                     length + distance + remaining_length
@@ -192,41 +194,32 @@ fn worthy_cheats_from_tile(
 }
 
 fn shortest_path_full(
-    start: &BoundedPoint,
-    end: &BoundedPoint,
+    start: &(usize, usize),
+    end: &(usize, usize),
     track: &Array2<Track>,
-) -> AHashMap<BoundedPoint, usize> {
+) -> Array2<Option<usize>> {
     let mut queue = VecDeque::new();
-    let mut visited = Array2::from_elem(track.dim(), false);
-    let mut result = AHashMap::new();
+    let mut visited = Array2::from_elem(track.dim(), None);
 
     queue.push_back((*start, 0));
 
-    while let Some((tile, length)) = queue.pop_front() {
-        if tile == *end {
-            result.insert(tile, length);
-            break;
-        }
+    breadth_first_search(
+        queue,
+        &mut visited,
+        |(tile, _)| (tile == end).then_some(()),
+        |(tile, length)| {
+            let new_length = length + 1;
+            tile.into_iter_cardinal_adjacent()
+                .filter(|adjacent| {
+                    matches!(
+                        track.get(*adjacent).expect("exists"),
+                        Track::End | Track::Start | Track::Open
+                    )
+                })
+                .map(move |adjacent| (adjacent, new_length))
+        },
+        |_, _| (),
+    );
 
-        let visit = visited.get_mut((tile.y, tile.x)).expect("exists");
-        if *visit {
-            continue;
-        }
-        *visit = true;
-        result.insert(tile, length);
-
-        tile.into_iter_cardinal_adjacent()
-            .filter(|adjacent| {
-                matches!(
-                    adjacent.get_from_table(track).expect("exists"),
-                    Track::End | Track::Start | Track::Open
-                )
-            })
-            .filter(|adjacent| visited.get((adjacent.y, adjacent.x)).is_some_and(|x| !*x))
-            .for_each(|adjacent| {
-                queue.push_back((adjacent, length + 1));
-            });
-    }
-
-    result
+    visited
 }

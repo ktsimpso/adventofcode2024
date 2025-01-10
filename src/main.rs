@@ -1,6 +1,5 @@
 #![feature(iter_map_windows)]
 #![feature(let_chains)]
-#![recursion_limit = "256"]
 mod days;
 mod fetch_input;
 mod libs;

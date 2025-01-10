@@ -1,6 +1,6 @@
 use crate::libs::{
     cli::{new_cli_problem, CliProblem, Freeze},
-    graph::{BoundedPoint, CardinalDirection, Direction, CARDINAL_DIRECTIONS},
+    graph::{BoundedPoint, CardinalDirection, Direction, PlanarCoordinate, CARDINAL_DIRECTIONS},
     parse::{parse_table2, ParserExt, StringParse},
     problem::Problem,
 };

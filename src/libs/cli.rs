@@ -60,9 +60,9 @@ impl<T: Command> AsCommand for T {
     }
 }
 
-pub struct Thaw {}
+pub enum Thaw {}
 
-pub struct Freeze {}
+pub enum Freeze {}
 
 pub struct Part<T, O> {
     help: &'static str,
@@ -79,8 +79,7 @@ where
     help: &'static str,
     file_help: &'static str,
     parts: Vec<Part<A, I::Output>>,
-    _state: S,
-    _marker: PhantomData<I>,
+    _marker: PhantomData<(I, S)>,
 }
 
 pub fn new_cli_problem<I, A>(
@@ -97,7 +96,6 @@ where
         help,
         file_help,
         parts: Vec::new(),
-        _state: Thaw {},
         _marker: PhantomData,
     }
 }
@@ -123,7 +121,6 @@ where
             help: self.help,
             file_help: self.file_help,
             parts: self.parts,
-            _state: Freeze {},
             _marker: PhantomData,
         }
     }

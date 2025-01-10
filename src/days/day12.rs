@@ -1,6 +1,6 @@
 use crate::libs::{
     cli::{new_cli_problem, CliProblem, Freeze},
-    graph::{BoundedPoint, PointDirection, CARDINAL_DIRECTIONS},
+    graph::{breadth_first_search, PlanarCoordinate, PointDirection, CARDINAL_DIRECTIONS},
     parse::{parse_table2, ParserExt, StringParse},
     problem::Problem,
 };
@@ -64,13 +64,11 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day12, extra::Err<Rich<'a, char>>> {
 
 #[problem_day]
 fn run(Day12(input): Day12, arguments: &CommandLineArguments) -> usize {
-    let (max_x, max_y) = BoundedPoint::maxes_from_table(&input);
     let mut visited = Array2::from_elem(input.dim(), false);
     let mut regions = Vec::new();
 
-    for (index, plot) in input.indexed_iter() {
-        let current = BoundedPoint::from_table_index(index, max_x, max_y);
-        if *current.get_from_table(&visited).unwrap_or(&false) {
+    for (current, plot) in input.indexed_iter() {
+        if *visited.get(current).unwrap_or(&false) {
             continue;
         }
 
@@ -78,21 +76,20 @@ fn run(Day12(input): Day12, arguments: &CommandLineArguments) -> usize {
         let mut queue = VecDeque::new();
         queue.push_back(current);
 
-        while let Some(next_plot) = queue.pop_front() {
-            let visit = next_plot.get_mut_from_table(&mut visited).expect("Exists");
-            if *visit {
-                continue;
-            }
-            *visit = true;
-
-            region.push(next_plot);
-
-            next_plot
-                .into_iter_cardinal_adjacent()
-                .filter(|adjacent| !*adjacent.get_from_table(&visited).unwrap_or(&false))
-                .filter(|adjacent| adjacent.get_from_table(&input).expect("Exists") == plot)
-                .for_each(|adjacent| queue.push_back(adjacent));
-        }
+        breadth_first_search(
+            queue,
+            &mut visited,
+            |next_plot| {
+                region.push(*next_plot);
+                None::<()>
+            },
+            |next_plot| {
+                next_plot
+                    .into_iter_cardinal_adjacent()
+                    .filter(|adjacent| input.get(*adjacent).is_some_and(|other| other == plot))
+            },
+            |_, _| (),
+        );
 
         regions.push(region);
     }
@@ -108,44 +105,44 @@ fn run(Day12(input): Day12, arguments: &CommandLineArguments) -> usize {
         .sum()
 }
 
-fn score_region<F>(region: &[BoundedPoint], field: &Array2<char>, fence_function: F) -> usize
+fn score_region<F>(region: &[(usize, usize)], field: &Array2<char>, fence_function: F) -> usize
 where
-    F: FnOnce(&[BoundedPoint], &Array2<char>) -> usize,
+    F: FnOnce(&[(usize, usize)], &Array2<char>) -> usize,
 {
     let area = region.len();
 
     area * fence_function(region, field)
 }
 
-fn count_corners(region: &[BoundedPoint], field: &Array2<char>) -> usize {
+fn count_corners(region: &[(usize, usize)], field: &Array2<char>) -> usize {
     region
         .iter()
         .map(|point| {
-            let plot = point.get_from_table(field).expect("Exists");
+            let plot = field.get(*point).expect("Exists");
             let left = point
                 .get_adjacent(PointDirection::Left)
-                .and_then(|adjacent| adjacent.get_from_table(field));
+                .and_then(|adjacent| field.get(adjacent));
             let up = point
                 .get_adjacent(PointDirection::Up)
-                .and_then(|adjacent| adjacent.get_from_table(field));
+                .and_then(|adjacent| field.get(adjacent));
             let up_left = point
                 .get_adjacent(PointDirection::UpLeft)
-                .and_then(|adjacent| adjacent.get_from_table(field));
+                .and_then(|adjacent| field.get(adjacent));
             let up_right = point
                 .get_adjacent(PointDirection::UpRight)
-                .and_then(|adjacent| adjacent.get_from_table(field));
+                .and_then(|adjacent| field.get(adjacent));
             let right: Option<&char> = point
                 .get_adjacent(PointDirection::Right)
-                .and_then(|adjacent| adjacent.get_from_table(field));
+                .and_then(|adjacent| field.get(adjacent));
             let down_right = point
                 .get_adjacent(PointDirection::DownRight)
-                .and_then(|adjacent| adjacent.get_from_table(field));
+                .and_then(|adjacent| field.get(adjacent));
             let down = point
                 .get_adjacent(PointDirection::Down)
-                .and_then(|adjacent| adjacent.get_from_table(field));
+                .and_then(|adjacent| field.get(adjacent));
             let down_left = point
                 .get_adjacent(PointDirection::DownLeft)
-                .and_then(|adjacent| adjacent.get_from_table(field));
+                .and_then(|adjacent| field.get(adjacent));
 
             let mut count = 0;
 
@@ -183,17 +180,17 @@ fn is_corner(
             && horizontal.is_none_or(|adjacent| adjacent != plot))
 }
 
-fn count_perimeter(region: &[BoundedPoint], field: &Array2<char>) -> usize {
+fn count_perimeter(region: &[(usize, usize)], field: &Array2<char>) -> usize {
     region
         .iter()
         .map(|point| {
-            let plot = point.get_from_table(field).expect("Exists");
+            let plot = field.get(*point).expect("Exists");
             CARDINAL_DIRECTIONS
                 .iter()
                 .filter(|direction| {
                     point
                         .get_adjacent(**direction)
-                        .and_then(|adjacent| adjacent.get_from_table(field))
+                        .and_then(|adjacent| field.get(adjacent))
                         .is_none_or(|other_plot| plot != other_plot)
                 })
                 .count()
