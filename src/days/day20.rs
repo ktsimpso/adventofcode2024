@@ -206,6 +206,7 @@ fn shortest_path_full(
     breadth_first_search(
         queue,
         &mut visited,
+        |_| None,
         |(tile, _)| (tile == end).then_some(()),
         |(tile, length)| {
             let new_length = length + 1;

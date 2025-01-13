@@ -1,6 +1,6 @@
 use crate::libs::{
     cli::{new_cli_problem, CliProblem, Freeze},
-    graph::{BoundedPoint, PlanarCoordinate, PointDirection, RADIAL_DIRECTIONS},
+    graph::{PlanarCoordinate, PointDirection, RADIAL_DIRECTIONS},
     parse::{parse_table2, ParserExt, StringParse},
     problem::Problem,
 };
@@ -55,19 +55,17 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day04, extra::Err<Rich<'a, char>>> {
 
 #[problem_day]
 fn run(Day04(input): Day04, arguments: &CommandLineArguments) -> usize {
-    let (max_x, max_y) = BoundedPoint::maxes_from_table(&input);
-
     match arguments.search_setting {
         SearchSetting::Xmas => input
             .indexed_iter()
             .filter(|(_, value)| **value == 'X')
-            .map(|(index, _)| BoundedPoint::from_table_index(index, max_x, max_y))
+            .map(|(index, _)| index)
             .map(|point| number_of_xmas_from_point(&point, &input))
             .sum(),
         SearchSetting::MasInX => input
             .indexed_iter()
             .filter(|(_, value)| **value == 'A')
-            .map(|(index, _)| BoundedPoint::from_table_index(index, max_x, max_y))
+            .map(|(index, _)| index)
             .filter(|point| is_mas_from_point(point, &input))
             .count(),
     }
@@ -77,12 +75,12 @@ const DIAGNAL_1: [PointDirection; 2] = [PointDirection::UpRight, PointDirection:
 const DIAGNAL_2: [PointDirection; 2] = [PointDirection::UpLeft, PointDirection::DownRight];
 const DIAGNALS: [[PointDirection; 2]; 2] = [DIAGNAL_1, DIAGNAL_2];
 
-fn is_mas_from_point(point: &BoundedPoint, search: &Array2<char>) -> bool {
+fn is_mas_from_point(point: &(usize, usize), search: &Array2<char>) -> bool {
     DIAGNALS.into_iter().all(|diagnal| {
         diagnal
             .into_iter()
             .flat_map(|direction| point.get_adjacent(direction))
-            .flat_map(|point| point.get_from_table(search))
+            .flat_map(|point| search.get(point))
             .fold((0, 0), |(mut m_count, mut s_count), c| {
                 if *c == 'M' {
                     m_count += 1;
@@ -98,7 +96,7 @@ fn is_mas_from_point(point: &BoundedPoint, search: &Array2<char>) -> bool {
 
 const MAS: [char; 3] = ['M', 'A', 'S'];
 
-fn number_of_xmas_from_point(point: &BoundedPoint, search: &Array2<char>) -> usize {
+fn number_of_xmas_from_point(point: &(usize, usize), search: &Array2<char>) -> usize {
     RADIAL_DIRECTIONS
         .into_iter()
         .filter(|direction| {
@@ -107,7 +105,7 @@ fn number_of_xmas_from_point(point: &BoundedPoint, search: &Array2<char>) -> usi
                     point
                         .into_iter_direction(*direction)
                         .take(3)
-                        .flat_map(|point| point.get_from_table(search)),
+                        .flat_map(|point| search.get(point)),
                 )
                 .all(|items| match items {
                     itertools::EitherOrBoth::Both(a, b) => a == *b,

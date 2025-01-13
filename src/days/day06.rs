@@ -1,6 +1,8 @@
 use crate::libs::{
     cli::{new_cli_problem, CliProblem, Freeze},
-    graph::{BoundedPoint, CardinalDirection, Direction, PlanarCoordinate, CARDINAL_DIRECTIONS},
+    graph::{
+        breadth_first_search, CardinalDirection, Direction, PlanarCoordinate, CARDINAL_DIRECTIONS,
+    },
     parse::{parse_table2, ParserExt, StringParse},
     problem::Problem,
 };
@@ -14,7 +16,7 @@ use chumsky::{
 use clap::{Args, ValueEnum};
 use itertools::Itertools;
 use ndarray::{Array2, Array3, Axis};
-use std::sync::LazyLock;
+use std::{collections::VecDeque, sync::LazyLock};
 
 pub static DAY_06: LazyLock<CliProblem<Day06, CommandLineArguments, Freeze>> =
     LazyLock::new(|| {
@@ -71,12 +73,10 @@ fn parse<'a>() -> impl Parser<'a, &'a str, Day06, extra::Err<Rich<'a, char>>> {
 
 #[problem_day]
 fn run(Day06(input): Day06, arguments: &CommandLineArguments) -> usize {
-    let (max_x, max_y) = BoundedPoint::maxes_from_table(&input);
-
     let guard_position = input
         .indexed_iter()
         .find(|(_, location)| matches!(location, Lab::Guard))
-        .map(|(location, _)| BoundedPoint::from_table_index(location, max_x, max_y))
+        .map(|(location, _)| location)
         .expect("Guard exists");
     let guard_facing = CardinalDirection::Up;
 
@@ -95,10 +95,9 @@ fn run(Day06(input): Day06, arguments: &CommandLineArguments) -> usize {
         AvoidenceStrategy::FullPath => guard_path.len(),
         AvoidenceStrategy::Loop => {
             let mut sparse_lab = build_obstruction_mapping(&input);
-            let mut visited = Array3::from_elem((max_y + 1, max_x + 1, 4), 0);
+            let mut visited = Array3::from_elem((input.dim().0, input.dim().1, 4), 0);
             guard_path
                 .into_iter()
-                .map(|index| BoundedPoint::from_table_index(index, max_x, max_y))
                 .filter(|point| *point != guard_position)
                 .enumerate()
                 .filter(|(index, obstruction)| {
@@ -118,60 +117,42 @@ fn run(Day06(input): Day06, arguments: &CommandLineArguments) -> usize {
     }
 }
 
-fn direction_to_index(direction: &CardinalDirection) -> usize {
-    match direction {
-        CardinalDirection::Up => 0,
-        CardinalDirection::Down => 1,
-        CardinalDirection::Left => 2,
-        CardinalDirection::Right => 3,
-    }
-}
-
 fn run(
-    mut guard_position: BoundedPoint,
-    mut guard_facing: CardinalDirection,
+    guard_position: (usize, usize),
+    guard_facing: CardinalDirection,
     lab: &Array2<Lab>,
 ) -> Option<Array3<bool>> {
-    let mut visited = Array3::from_elem(
-        (guard_position.max_y + 1, guard_position.max_x + 1, 4),
-        false,
-    );
+    let mut visited = Array3::from_elem((lab.dim().0, lab.dim().1, 4), false);
 
-    *visited
-        .get_mut((
-            guard_position.y,
-            guard_position.x,
-            direction_to_index(&guard_facing),
-        ))
-        .expect("exists") = true;
+    let mut queue = VecDeque::new();
+    queue.push_back((guard_position, guard_facing));
 
-    while let Some((direction, position)) = run_step(&guard_facing, &guard_position, lab) {
-        let visit = visited
-            .get_mut((position.y, position.x, direction_to_index(&direction)))
-            .expect("Exists");
-        if *visit {
-            return None;
-        }
-        *visit = true;
-
-        guard_facing = direction;
-        guard_position = position;
+    match breadth_first_search(
+        queue,
+        &mut visited,
+        |_| Some(()),
+        |_| None::<()>,
+        |(position, facing)| run_step(position, facing, lab).into_iter(),
+        |_, _| (),
+    ) {
+        Some(_) => None,
+        None => Some(visited),
     }
-
-    Some(visited)
 }
 
 fn run_step(
+    guard_position: &(usize, usize),
     guard_facing: &CardinalDirection,
-    guard_position: &BoundedPoint,
     lab: &Array2<Lab>,
-) -> Option<(CardinalDirection, BoundedPoint)> {
-    guard_position.get_adjacent(*guard_facing).map(|position| {
-        match position.get_from_table(lab).expect("Valid position") {
-            Lab::Obstruction => (guard_facing.get_clockwise(), *guard_position),
-            _ => (*guard_facing, position),
-        }
-    })
+) -> Option<((usize, usize), CardinalDirection)> {
+    guard_position
+        .get_adjacent(*guard_facing)
+        .and_then(|position| {
+            lab.get(position).map(|location| match location {
+                Lab::Obstruction => (*guard_position, guard_facing.get_clockwise()),
+                _ => (position, *guard_facing),
+            })
+        })
 }
 
 fn build_obstruction_mapping(lab: &Array2<Lab>) -> Array2<Option<[Option<u8>; 4]>> {
@@ -247,25 +228,23 @@ fn build_obstruction_mapping(lab: &Array2<Lab>) -> Array2<Option<[Option<u8>; 4]
 }
 
 fn add_obstruction(
-    position: BoundedPoint,
+    position: (usize, usize),
     lab: &mut Array2<Option<[Option<u8>; 4]>>,
 ) -> [Option<u8>; 4] {
-    let old = *position.get_from_table(lab).expect("exists");
-    position.insert_into_table(None, lab);
+    let old: Option<[Option<u8>; 4]> = *lab.get(position).expect("exists");
+    *lab.get_mut(position).expect("position exists") = None;
     CARDINAL_DIRECTIONS.iter().for_each(|direction| {
         position
             .into_iter_direction(*direction)
             .enumerate()
-            .take_while(|(index, point)| {
-                lab.get_mut((point.y, point.x))
-                    .expect("exists")
-                    .iter_mut()
-                    .for_each(|contents| {
-                        contents[direction_to_index(&direction.get_opposite())] =
-                            Some(*index as u8);
+            .take_while(|(index, point)| match lab.get_mut(*point) {
+                Some(value) => {
+                    value.iter_mut().for_each(|contents| {
+                        contents[direction.get_opposite().array_index()] = Some(*index as u8);
                     });
-
-                point.get_from_table(lab).expect("exists").is_some()
+                    value.is_some()
+                }
+                None => false,
             })
             .for_each(|_| ())
     });
@@ -273,33 +252,32 @@ fn add_obstruction(
 }
 
 fn restore_lab(
-    position: BoundedPoint,
+    position: (usize, usize),
     old: [Option<u8>; 4],
     lab: &mut Array2<Option<[Option<u8>; 4]>>,
 ) {
-    position.insert_into_table(Some(old), lab);
+    *lab.get_mut(position).expect("position exists") = Some(old);
     CARDINAL_DIRECTIONS.iter().for_each(|direction| {
-        let offset = old[direction_to_index(&direction.get_opposite())];
+        let offset = old[direction.get_opposite().array_index()];
         position
             .into_iter_direction(*direction)
             .enumerate()
-            .take_while(|(index, point)| {
-                lab.get_mut((point.y, point.x))
-                    .expect("exists")
-                    .iter_mut()
-                    .for_each(|contents| {
-                        contents[direction_to_index(&direction.get_opposite())] =
+            .take_while(|(index, point)| match lab.get_mut(*point) {
+                Some(value) => {
+                    value.iter_mut().for_each(|contents| {
+                        contents[direction.get_opposite().array_index()] =
                             offset.map(|distance| distance + 1 + *index as u8);
                     });
-
-                point.get_from_table(lab).expect("exists").is_some()
+                    value.is_some()
+                }
+                None => false,
             })
             .for_each(|_| ())
     });
 }
 
 fn does_guard_loop(
-    mut guard_position: BoundedPoint,
+    mut guard_position: (usize, usize),
     mut guard_facing: CardinalDirection,
     visited_generation: u16,
     lab: &Array2<Option<[Option<u8>; 4]>>,
@@ -307,15 +285,15 @@ fn does_guard_loop(
 ) -> bool {
     *visited
         .get_mut((
-            guard_position.y,
-            guard_position.x,
-            direction_to_index(&guard_facing),
+            guard_position.0,
+            guard_position.1,
+            guard_facing.array_index(),
         ))
         .expect("exists") = visited_generation;
 
     while let Some((direction, position)) = run_step_sparse(&guard_facing, &guard_position, lab) {
         let visit = visited
-            .get_mut((position.y, position.x, direction_to_index(&direction)))
+            .get_mut((position.0, position.1, direction.array_index()))
             .expect("Exists");
         if *visit == visited_generation {
             return true;
@@ -331,12 +309,12 @@ fn does_guard_loop(
 
 fn run_step_sparse(
     guard_facing: &CardinalDirection,
-    guard_position: &BoundedPoint,
+    guard_position: &(usize, usize),
     lab: &Array2<Option<[Option<u8>; 4]>>,
-) -> Option<(CardinalDirection, BoundedPoint)> {
-    guard_position.get_from_table(lab).and_then(|location| {
+) -> Option<(CardinalDirection, (usize, usize))> {
+    lab.get(*guard_position).and_then(|location| {
         location
-            .and_then(|indices| indices[direction_to_index(guard_facing)])
+            .and_then(|indices| indices[guard_facing.array_index()])
             .and_then(|distance| guard_position.stride_to(distance as usize, *guard_facing))
             .map(|next_position| (guard_facing.get_clockwise(), next_position))
     })

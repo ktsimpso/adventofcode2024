@@ -105,6 +105,7 @@ where
     breadth_first_search(
         queue,
         &mut visited,
+        |_| None,
         |_| None::<()>,
         |location| {
             let height = mountain.get(*location).expect("Valid Index");

@@ -79,6 +79,7 @@ fn run(Day12(input): Day12, arguments: &CommandLineArguments) -> usize {
         breadth_first_search(
             queue,
             &mut visited,
+            |_| None,
             |next_plot| {
                 region.push(*next_plot);
                 None::<()>
