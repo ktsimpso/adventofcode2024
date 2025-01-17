@@ -1,6 +1,6 @@
 use crate::libs::{
     cli::{flag_arg, new_cli_problem, single_arg, CliArgs, CliProblem, Freeze},
-    graph::{BoundedPoint, PlanarCoordinate},
+    graph::{breadth_first_search, BreadthFirstSearchLifecycle, PlanarCoordinate},
     parse::{parse_lines, parse_usize, ParserExt, StringParse},
     problem::{Problem, ProblemResult},
 };
@@ -118,36 +118,17 @@ fn run(Day18(input): Day18, arguments: &CommandLineArguments) -> ProblemResult {
     match arguments.path_stat {
         PathStat::ShortestPath(n) => {
             let mut data =
-                Array2::from_elem((arguments.x_size + 1, arguments.y_size + 1), Memory::Safe);
+                Array2::from_elem((arguments.y_size + 1, arguments.x_size + 1), Memory::Safe);
 
             input
                 .into_iter()
                 .take(n)
-                .map(|(x, y)| BoundedPoint {
-                    x,
-                    y,
-                    max_x: arguments.x_size,
-                    max_y: arguments.y_size,
-                })
-                .for_each(|point| {
-                    *data.get_mut((point.y, point.x)).expect("exists") = Memory::Corrupted;
-                });
+                .map(|(x, y)| (y, x))
+                .for_each(|point| *data.get_mut(point).expect("Exists") = Memory::Corrupted);
 
-            let start = BoundedPoint {
-                x: 0,
-                y: 0,
-                max_x: arguments.x_size,
-                max_y: arguments.y_size,
-            };
-
-            let end = BoundedPoint {
-                x: arguments.x_size,
-                y: arguments.y_size,
-                max_x: arguments.x_size,
-                max_y: arguments.y_size,
-            };
-
-            shortest_path(&start, &end, &data).expect("Exists").into()
+            shortest_path(&(0, 0), &(arguments.y_size, arguments.x_size), &data)
+                .expect("Exists")
+                .into()
         }
         PathStat::FirstBlockage => find_first_blockage(&input, arguments.x_size, arguments.y_size)
             .map(|(x, y)| format!("{},{}", x, y))
@@ -172,92 +153,83 @@ fn find_first_blockage(
     let mut data = Array2::from_elem((max_x + 1, max_y + 1), Color::Blank);
 
     blockages.iter().find(|(x, y)| {
-        let point = BoundedPoint {
-            x: *x,
-            y: *y,
-            max_x,
-            max_y,
-        };
+        let point = (*y, *x);
         let is_blue = *x == max_x
             || *y == 0
             || point
                 .into_iter_radial_adjacent()
-                .flat_map(|point| point.get_from_table(&data))
+                .flat_map(|point| data.get(point))
                 .any(|color| matches!(color, Color::Blue));
         let is_red = *x == 0
             || *y == max_y
             || point
                 .into_iter_radial_adjacent()
-                .flat_map(|point| point.get_from_table(&data))
+                .flat_map(|point| data.get(point))
                 .any(|color| matches!(color, Color::Red));
 
         match (is_blue, is_red) {
             (true, true) => true,
             (true, false) => {
-                *data.get_mut((point.y, point.x)).expect("Exists") = Color::Blue;
+                *data.get_mut(point).expect("Exists") = Color::Blue;
                 color_neighbors(&point, Color::Blue, &mut data);
                 false
             }
             (false, true) => {
-                *data.get_mut((point.y, point.x)).expect("Exists") = Color::Red;
+                *data.get_mut(point).expect("Exists") = Color::Red;
                 color_neighbors(&point, Color::Red, &mut data);
                 false
             }
             (false, false) => {
-                *data.get_mut((point.y, point.x)).expect("Exists") = Color::White;
+                *data.get_mut(point).expect("Exists") = Color::White;
                 false
             }
         }
     })
 }
 
-fn color_neighbors(point: &BoundedPoint, color: Color, data: &mut Array2<Color>) {
+fn color_neighbors(point: &(usize, usize), color: Color, data: &mut Array2<Color>) {
     point.into_iter_radial_adjacent().for_each(|adjacent| {
-        let current_color = data.get_mut((adjacent.y, adjacent.x)).expect("Exists");
-        if !matches!(current_color, Color::White) {
-            return;
+        if data
+            .get_mut(adjacent)
+            .filter(|current_color| matches!(current_color, Color::White))
+            .map(|current_color| {
+                *current_color = color.clone();
+                current_color
+            })
+            .is_some()
+        {
+            color_neighbors(&adjacent, color.clone(), data)
         }
-
-        *current_color = color.clone();
-
-        color_neighbors(&adjacent, color.clone(), data);
     });
 }
 
-fn shortest_path(start: &BoundedPoint, end: &BoundedPoint, data: &Array2<Memory>) -> Option<usize> {
+fn shortest_path(
+    start: &(usize, usize),
+    end: &(usize, usize),
+    data: &Array2<Memory>,
+) -> Option<usize> {
     let mut queue = VecDeque::new();
-    queue.push_back((*start, 0));
+    queue.push_back((*start, 0_usize));
 
-    let mut visited = Array2::from_elem((71, 71), false);
-    let mut result = None;
+    let mut visited = Array2::from_elem(data.dim(), false);
 
-    while let Some((point, distance)) = queue.pop_front() {
-        if point == *end {
-            result = Some(distance);
-            break;
-        }
-
-        let visit = point.get_mut_from_table(&mut visited).expect("Exists");
-        if *visit {
-            continue;
-        }
-        *visit = true;
-
-        get_adjacent(&point, data)
-            .filter(|adjacent| !adjacent.get_from_table(&visited).expect("exists"))
-            .for_each(|adjacent| {
-                queue.push_back((adjacent, distance + 1));
-            });
-    }
-
-    result
+    breadth_first_search(
+        queue,
+        &mut visited,
+        &mut BreadthFirstSearchLifecycle::get_adjacent(|(point, distance)| {
+            let new_distance = distance + 1;
+            get_adjacent(point, data).map(move |new_point| (new_point, new_distance))
+        })
+        .with_first_visit(|(point, distance)| (point == end).then_some(*distance)),
+    )
 }
 
 fn get_adjacent<'a>(
-    point: &BoundedPoint,
+    point: &(usize, usize),
     data: &'a Array2<Memory>,
-) -> impl Iterator<Item = BoundedPoint> + 'a {
-    point
-        .into_iter_cardinal_adjacent()
-        .filter(|adjacent| matches!(adjacent.get_from_table(data).expect("Exists"), Memory::Safe))
+) -> impl Iterator<Item = (usize, usize)> + 'a {
+    point.into_iter_cardinal_adjacent().filter(|adjacent| {
+        data.get(*adjacent)
+            .is_some_and(|value| matches!(value, Memory::Safe))
+    })
 }

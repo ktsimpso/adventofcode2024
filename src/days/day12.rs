@@ -1,6 +1,9 @@
 use crate::libs::{
     cli::{new_cli_problem, CliProblem, Freeze},
-    graph::{breadth_first_search, PlanarCoordinate, PointDirection, CARDINAL_DIRECTIONS},
+    graph::{
+        breadth_first_search, BreadthFirstSearchLifecycle, PlanarCoordinate, PointDirection,
+        CARDINAL_DIRECTIONS,
+    },
     parse::{parse_table2, ParserExt, StringParse},
     problem::Problem,
 };
@@ -79,17 +82,15 @@ fn run(Day12(input): Day12, arguments: &CommandLineArguments) -> usize {
         breadth_first_search(
             queue,
             &mut visited,
-            |_| None,
-            |next_plot| {
-                region.push(*next_plot);
-                None::<()>
-            },
-            |next_plot| {
+            &mut BreadthFirstSearchLifecycle::get_adjacent(|next_plot: &(usize, usize)| {
                 next_plot
                     .into_iter_cardinal_adjacent()
                     .filter(|adjacent| input.get(*adjacent).is_some_and(|other| other == plot))
-            },
-            |_, _| (),
+            })
+            .with_first_visit(|next_plot| {
+                region.push(*next_plot);
+                None::<()>
+            }),
         );
 
         regions.push(region);

@@ -110,7 +110,7 @@ fn find_all_shortest_paths(start: &BoundedPoint, maze: &Array2<Maze>) -> Option<
         }
 
         let has_visited = visited
-            .get_mut((point.y, point.x, direction_to_index(&direction)))
+            .get_mut((point.y, point.x, direction.array_index()))
             .expect("Exists");
         if *has_visited {
             continue;
@@ -121,7 +121,7 @@ fn find_all_shortest_paths(start: &BoundedPoint, maze: &Array2<Maze>) -> Option<
         get_valid_moves(&direction, &point, maze)
             .filter(|(direction, point, _)| {
                 !visited
-                    .get((point.y, point.x, direction_to_index(direction)))
+                    .get((point.y, point.x, direction.array_index()))
                     .expect("Exists")
             })
             .for_each(|(new_direction, new_point, score)| {
@@ -129,7 +129,7 @@ fn find_all_shortest_paths(start: &BoundedPoint, maze: &Array2<Maze>) -> Option<
                 let new_priority = priority.0 + score;
 
                 let path = visited_path
-                    .get_mut((new_point.y, new_point.x, direction_to_index(&new_direction)))
+                    .get_mut((new_point.y, new_point.x, new_direction.array_index()))
                     .expect("Exists");
 
                 match new_priority.cmp(&path.1) {
@@ -166,7 +166,7 @@ fn find_all_shortest_paths(start: &BoundedPoint, maze: &Array2<Maze>) -> Option<
         on_shortest_path.insert(&end_point);
         CARDINAL_DIRECTIONS.iter().for_each(|direction| {
             let (previous_points, priority) = visited_path
-                .get((end_point.y, end_point.x, direction_to_index(direction)))
+                .get((end_point.y, end_point.x, direction.array_index()))
                 .expect("Exists");
             if *priority == score {
                 previous_points.iter().for_each(|(direction, point)| {
@@ -178,7 +178,7 @@ fn find_all_shortest_paths(start: &BoundedPoint, maze: &Array2<Maze>) -> Option<
 
         while let Some((direction, point)) = path_queue.pop_front() {
             let (previous_points, _) = visited_path
-                .get((point.y, point.x, direction_to_index(direction)))
+                .get((point.y, point.x, direction.array_index()))
                 .expect("Exists");
             previous_points.iter().for_each(|(direction, point)| {
                 on_shortest_path.insert(point);
@@ -205,7 +205,7 @@ fn find_shortest_path_weight(start: &BoundedPoint, maze: &Array2<Maze>) -> Optio
         }
 
         let has_visited = visited
-            .get_mut((point.y, point.x, direction_to_index(&direction)))
+            .get_mut((point.y, point.x, direction.array_index()))
             .expect("Exists");
         if *has_visited {
             continue;
@@ -216,7 +216,7 @@ fn find_shortest_path_weight(start: &BoundedPoint, maze: &Array2<Maze>) -> Optio
         get_valid_moves(&direction, &point, maze)
             .filter(|(direction, point, _)| {
                 !visited
-                    .get((point.y, point.x, direction_to_index(direction)))
+                    .get((point.y, point.x, direction.array_index()))
                     .expect("Exists")
             })
             .for_each(|(new_direction, new_point, score)| {
@@ -240,15 +240,6 @@ fn find_shortest_path_weight(start: &BoundedPoint, maze: &Array2<Maze>) -> Optio
     }
 
     result
-}
-
-fn direction_to_index(direction: &CardinalDirection) -> usize {
-    match direction {
-        CardinalDirection::Up => 0,
-        CardinalDirection::Down => 1,
-        CardinalDirection::Left => 2,
-        CardinalDirection::Right => 3,
-    }
 }
 
 fn get_valid_moves(

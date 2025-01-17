@@ -1,6 +1,6 @@
 use crate::libs::{
     cli::{new_cli_problem, CliProblem, Freeze},
-    graph::{breadth_first_search, PlanarCoordinate},
+    graph::{breadth_first_search, BreadthFirstSearchLifecycle, PlanarCoordinate},
     parse::{parse_digit, parse_table2, ParserExt, StringParse},
     problem::Problem,
 };
@@ -105,9 +105,7 @@ where
     breadth_first_search(
         queue,
         &mut visited,
-        |_| None,
-        |_| None::<()>,
-        |location| {
+        &mut BreadthFirstSearchLifecycle::get_adjacent::<()>(|location| {
             let height = mountain.get(*location).expect("Valid Index");
             if *height == 0 {
                 trail_heads.insert(*location);
@@ -123,11 +121,11 @@ where
                             .is_some_and(|position| *position == height - 1)
                     }),
             )
-        },
-        |location, valid_step| {
+        })
+        .with_on_insert(|location, valid_step| {
             let peaks = score.get(*location).expect("Exists").clone();
             add_to_score(valid_step, &peaks, &mut score);
-        },
+        }),
     );
 
     trail_heads

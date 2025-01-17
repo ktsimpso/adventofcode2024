@@ -1,4 +1,7 @@
-use std::collections::{HashSet, VecDeque};
+use std::{
+    collections::{HashSet, VecDeque},
+    marker::PhantomData,
+};
 
 use ahash::AHashSet;
 use ndarray::{Array2, Array3};
@@ -58,13 +61,6 @@ impl BoundedPoint {
 
     pub fn insert_into_table<T>(&self, value: T, table: &mut Array2<T>) {
         *table.get_mut((self.y, self.x)).expect("position exists") = value;
-    }
-
-    pub fn into_iter_radial_adjacent(self) -> RadialAdjacentIterator {
-        RadialAdjacentIterator {
-            point: self,
-            index: 0,
-        }
     }
 
     pub fn get_adjacent_wrapping(self, point_direction: impl Into<PointDirection>) -> BoundedPoint {
@@ -691,13 +687,16 @@ where
     }
 }
 
-pub struct RadialAdjacentIterator {
-    point: BoundedPoint,
+pub struct RadialAdjacentIterator<T: PlanarCoordinate> {
+    point: T,
     index: usize,
 }
 
-impl Iterator for RadialAdjacentIterator {
-    type Item = BoundedPoint;
+impl<T> Iterator for RadialAdjacentIterator<T>
+where
+    T: PlanarCoordinate,
+{
+    type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.index >= RADIAL_DIRECTIONS.len() {
@@ -749,6 +748,16 @@ pub trait PlanarCoordinate {
         Self: Sized,
     {
         CardinalAdjacentIterator {
+            point: self,
+            index: 0,
+        }
+    }
+
+    fn into_iter_radial_adjacent(self) -> impl Iterator<Item = Self>
+    where
+        Self: Sized,
+    {
+        RadialAdjacentIterator {
             point: self,
             index: 0,
         }
@@ -892,13 +901,214 @@ impl PlanarCoordinate for (usize, usize) {
     }
 }
 
-pub fn breadth_first_search<'a, T, I, R, E, F, G, H>(
+fn default_on_visit<T, R>(_value: &T) -> Option<R> {
+    None
+}
+
+fn default_on_insert<T>(_value: &T, _adjacent: &T) {}
+
+pub struct BreadthFirstSearchLifecycle<
+    'a,
+    const ON_REPEAT_VISIT: bool,
+    const FIRST_VISIT: bool,
+    const ON_INSERT: bool,
+    T,
+    I,
+    R,
+    E,
+    F,
+    G,
+    H,
+> where
+    E: FnMut(&T) -> Option<R>,
+    F: FnMut(&T) -> I,
+    I: Iterator<Item = T> + 'a,
+    G: FnMut(&T, &T),
+    H: FnMut(&T) -> Option<R>,
+{
+    on_repeat_visit: E,
+    first_visit: H,
+    get_adjacent: F,
+    on_insert: G,
+    _marker: PhantomData<&'a (T, I, R)>,
+}
+
+impl<'a, T, I, F>
+    BreadthFirstSearchLifecycle<
+        'a,
+        false,
+        false,
+        false,
+        T,
+        I,
+        (),
+        fn(&T) -> Option<()>,
+        F,
+        fn(&T, &T),
+        fn(&T) -> Option<()>,
+    >
+where
+    F: FnMut(&T) -> I,
+    I: Iterator<Item = T> + 'a,
+{
+    pub fn get_adjacent<R>(
+        get_adjacent: F,
+    ) -> BreadthFirstSearchLifecycle<
+        'a,
+        false,
+        false,
+        false,
+        T,
+        I,
+        R,
+        impl FnMut(&T) -> Option<R>,
+        F,
+        impl FnMut(&T, &T),
+        impl FnMut(&T) -> Option<R>,
+    > {
+        BreadthFirstSearchLifecycle {
+            on_repeat_visit: default_on_visit,
+            first_visit: default_on_visit,
+            get_adjacent,
+            on_insert: default_on_insert,
+            _marker: PhantomData,
+        }
+    }
+}
+
+impl<'a, const ON_REPEAT_VISIT: bool, const FIRST_VISIT: bool, T, I, R, E, F, G, H>
+    BreadthFirstSearchLifecycle<'a, ON_REPEAT_VISIT, FIRST_VISIT, false, T, I, R, E, F, G, H>
+where
+    E: FnMut(&T) -> Option<R>,
+    F: FnMut(&T) -> I,
+    I: Iterator<Item = T> + 'a,
+    G: FnMut(&T, &T),
+    H: FnMut(&T) -> Option<R>,
+{
+    pub fn with_on_insert(
+        self,
+        on_insert: impl FnMut(&T, &T),
+    ) -> BreadthFirstSearchLifecycle<
+        'a,
+        ON_REPEAT_VISIT,
+        FIRST_VISIT,
+        true,
+        T,
+        I,
+        R,
+        E,
+        F,
+        impl FnMut(&T, &T),
+        H,
+    > {
+        BreadthFirstSearchLifecycle {
+            on_repeat_visit: self.on_repeat_visit,
+            first_visit: self.first_visit,
+            get_adjacent: self.get_adjacent,
+            on_insert,
+            _marker: PhantomData,
+        }
+    }
+}
+
+impl<'a, const ON_REPEAT_VISIT: bool, const ON_INSERT: bool, T, I, R, E, F, G, H>
+    BreadthFirstSearchLifecycle<'a, ON_REPEAT_VISIT, false, ON_INSERT, T, I, R, E, F, G, H>
+where
+    E: FnMut(&T) -> Option<R>,
+    F: FnMut(&T) -> I,
+    I: Iterator<Item = T> + 'a,
+    G: FnMut(&T, &T),
+    H: FnMut(&T) -> Option<R>,
+{
+    pub fn with_first_visit(
+        self,
+        first_visit: impl FnMut(&T) -> Option<R>,
+    ) -> BreadthFirstSearchLifecycle<
+        'a,
+        ON_REPEAT_VISIT,
+        true,
+        ON_INSERT,
+        T,
+        I,
+        R,
+        E,
+        F,
+        G,
+        impl FnMut(&T) -> Option<R>,
+    > {
+        BreadthFirstSearchLifecycle {
+            on_repeat_visit: self.on_repeat_visit,
+            first_visit,
+            get_adjacent: self.get_adjacent,
+            on_insert: self.on_insert,
+            _marker: PhantomData,
+        }
+    }
+}
+
+impl<'a, const FIRST_VISIT: bool, const ON_INSERT: bool, T, I, R, E, F, G, H>
+    BreadthFirstSearchLifecycle<'a, false, FIRST_VISIT, ON_INSERT, T, I, R, E, F, G, H>
+where
+    E: FnMut(&T) -> Option<R>,
+    F: FnMut(&T) -> I,
+    I: Iterator<Item = T> + 'a,
+    G: FnMut(&T, &T),
+    H: FnMut(&T) -> Option<R>,
+{
+    pub fn with_on_repeat_visit(
+        self,
+        on_repeat_visit: impl FnMut(&T) -> Option<R>,
+    ) -> BreadthFirstSearchLifecycle<
+        'a,
+        true,
+        FIRST_VISIT,
+        ON_INSERT,
+        T,
+        I,
+        R,
+        impl FnMut(&T) -> Option<R>,
+        F,
+        G,
+        H,
+    > {
+        BreadthFirstSearchLifecycle {
+            on_repeat_visit,
+            first_visit: self.first_visit,
+            get_adjacent: self.get_adjacent,
+            on_insert: self.on_insert,
+            _marker: PhantomData,
+        }
+    }
+}
+
+pub fn breadth_first_search<
+    'a,
+    const ON_REPEAT_VISIT: bool,
+    const FIRST_VISIT: bool,
+    const ON_INSERT: bool,
+    T,
+    I,
+    R,
+    E,
+    F,
+    G,
+    H,
+>(
     mut queue: VecDeque<T>,
     visitor: &mut impl Visitor<T>,
-    mut on_repeat_visit: E,
-    mut first_visit: H,
-    mut get_adjacent: F,
-    mut on_insert: G,
+    lifecycle: &mut BreadthFirstSearchLifecycle<
+        'a,
+        ON_REPEAT_VISIT,
+        FIRST_VISIT,
+        ON_INSERT,
+        T,
+        I,
+        R,
+        E,
+        F,
+        G,
+        H,
+    >,
 ) -> Option<R>
 where
     E: FnMut(&T) -> Option<R>,
@@ -909,21 +1119,21 @@ where
 {
     while let Some(value) = queue.pop_front() {
         if visitor.visit(&value) {
-            match on_repeat_visit(&value) {
+            match (lifecycle.on_repeat_visit)(&value) {
                 r @ Some(_) => return r,
                 None => continue,
             }
         }
 
-        let stop = first_visit(&value);
+        let stop = (lifecycle.first_visit)(&value);
         if stop.is_some() {
             return stop;
         }
 
-        get_adjacent(&value)
+        (lifecycle.get_adjacent)(&value)
             .filter(|adjacent| !visitor.has_visited(adjacent))
             .for_each(|adjacent| {
-                on_insert(&value, &adjacent);
+                (lifecycle.on_insert)(&value, &adjacent);
                 queue.push_back(adjacent);
             })
     }

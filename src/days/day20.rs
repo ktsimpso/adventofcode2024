@@ -1,8 +1,8 @@
 use crate::libs::{
     cli::{new_cli_problem, CliProblem, Freeze},
     graph::{
-        breadth_first_search, CardinalDirection, HorizontalDirection, PlanarCoordinate,
-        VerticalDirection, CARDINAL_DIRECTIONS,
+        breadth_first_search, BreadthFirstSearchLifecycle, CardinalDirection, HorizontalDirection,
+        PlanarCoordinate, VerticalDirection, CARDINAL_DIRECTIONS,
     },
     parse::{parse_table2, ParserExt, StringParse},
     problem::Problem,
@@ -206,20 +206,20 @@ fn shortest_path_full(
     breadth_first_search(
         queue,
         &mut visited,
-        |_| None,
-        |(tile, _)| (tile == end).then_some(()),
-        |(tile, length)| {
-            let new_length = length + 1;
-            tile.into_iter_cardinal_adjacent()
-                .filter(|adjacent| {
-                    matches!(
-                        track.get(*adjacent).expect("exists"),
-                        Track::End | Track::Start | Track::Open
-                    )
-                })
-                .map(move |adjacent| (adjacent, new_length))
-        },
-        |_, _| (),
+        &mut BreadthFirstSearchLifecycle::get_adjacent(
+            |(tile, length): &((usize, usize), usize)| {
+                let new_length = length + 1;
+                tile.into_iter_cardinal_adjacent()
+                    .filter(|adjacent| {
+                        matches!(
+                            track.get(*adjacent).expect("exists"),
+                            Track::End | Track::Start | Track::Open
+                        )
+                    })
+                    .map(move |adjacent| (adjacent, new_length))
+            },
+        )
+        .with_first_visit(|(tile, _)| (tile == end).then_some(())),
     );
 
     visited

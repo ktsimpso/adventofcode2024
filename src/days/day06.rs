@@ -1,7 +1,8 @@
 use crate::libs::{
     cli::{new_cli_problem, CliProblem, Freeze},
     graph::{
-        breadth_first_search, CardinalDirection, Direction, PlanarCoordinate, CARDINAL_DIRECTIONS,
+        breadth_first_search, BreadthFirstSearchLifecycle, CardinalDirection, Direction,
+        PlanarCoordinate, CARDINAL_DIRECTIONS,
     },
     parse::{parse_table2, ParserExt, StringParse},
     problem::Problem,
@@ -130,10 +131,10 @@ fn run(
     match breadth_first_search(
         queue,
         &mut visited,
-        |_| Some(()),
-        |_| None::<()>,
-        |(position, facing)| run_step(position, facing, lab).into_iter(),
-        |_, _| (),
+        &mut BreadthFirstSearchLifecycle::get_adjacent(|(position, facing)| {
+            run_step(position, facing, lab).into_iter()
+        })
+        .with_on_repeat_visit(|_| Some(())),
     ) {
         Some(_) => None,
         None => Some(visited),
