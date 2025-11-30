@@ -1,10 +1,14 @@
 use std::{
+    cmp::Reverse,
     collections::{HashSet, VecDeque},
+    hash::Hash,
     marker::PhantomData,
+    ops::Add,
 };
 
 use ahash::AHashSet;
 use ndarray::{Array2, Array3};
+use priority_queue::PriorityQueue;
 use subenum::subenum;
 
 pub const CARDINAL_DIRECTIONS: [CardinalDirection; 4] = [
@@ -1141,10 +1145,88 @@ where
     None
 }
 
+pub fn dijkstras<'a, T, I, R, C, E, F, G, H>(
+    mut queue: PriorityQueue<T, Reverse<C>>,
+    visitor: &mut impl Visitor<(T, C)>,
+    mut on_repeat_visit: E,
+    mut first_visit: H,
+    mut get_adjacent: F,
+    mut on_insert: G,
+) -> Option<R>
+where
+    E: FnMut(&(T, C)) -> Option<R>,
+    F: FnMut(&(T, C)) -> I,
+    I: Iterator<Item = (T, C)> + 'a,
+    G: FnMut(&(T, C), &(T, C)),
+    H: FnMut(&(T, C)) -> Option<R>,
+    C: Ord + Add<Output = C> + Copy,
+    T: Hash + Eq,
+{
+    while let Some((value, Reverse(cost))) = queue.pop() {
+        let value_cost = (value, cost);
+
+        if visitor.visit(&value_cost) {
+            match on_repeat_visit(&value_cost) {
+                r @ Some(_) => return r,
+                None => continue,
+            }
+        }
+
+        let stop = first_visit(&value_cost);
+        if stop.is_some() {
+            return stop;
+        }
+
+        get_adjacent(&value_cost)
+            .filter(|adjacent| !visitor.has_visited(adjacent))
+            .for_each(|(adjacent, next_cost)| {
+                let current_cost = queue.get_priority(&adjacent);
+                let new_cost = next_cost + cost;
+                let adjacent_cost = (adjacent, new_cost);
+
+                on_insert(&value_cost, &adjacent_cost);
+
+                match current_cost {
+                    Some(Reverse(current)) => {
+                        if new_cost < *current {
+                            queue.change_priority(&adjacent_cost.0, Reverse(new_cost));
+                        }
+                    }
+                    None => {
+                        queue.push(adjacent_cost.0, Reverse(new_cost));
+                    }
+                };
+            })
+    }
+
+    None
+}
+
 pub trait Visitor<K> {
     fn visit(&mut self, key: &K) -> bool;
 
     fn has_visited(&self, key: &K) -> bool;
+}
+
+impl<D, C> Visitor<((BoundedPoint, D), C)> for Array3<bool>
+where
+    D: Direction,
+{
+    fn visit(&mut self, ((point, direction), _): &((BoundedPoint, D), C)) -> bool {
+        let visit = self
+            .get_mut((point.y, point.x, direction.array_index()))
+            .expect("Exists");
+        if *visit {
+            return true;
+        }
+        *visit = true;
+        false
+    }
+
+    fn has_visited(&self, ((point, direction), _): &((BoundedPoint, D), C)) -> bool {
+        self.get((point.y, point.x, direction.array_index()))
+            .is_some_and(|x| *x)
+    }
 }
 
 impl<D> Visitor<(BoundedPoint, D)> for Array3<bool>
@@ -1164,6 +1246,27 @@ where
 
     fn has_visited(&self, (point, direction): &(BoundedPoint, D)) -> bool {
         self.get((point.y, point.x, direction.array_index()))
+            .is_some_and(|x| *x)
+    }
+}
+
+impl<D, C> Visitor<(((usize, usize), D), C)> for Array3<bool>
+where
+    D: Direction,
+{
+    fn visit(&mut self, (((y, x), direction), _): &(((usize, usize), D), C)) -> bool {
+        let visit = self
+            .get_mut((*y, *x, direction.array_index()))
+            .expect("Exists");
+        if *visit {
+            return true;
+        }
+        *visit = true;
+        false
+    }
+
+    fn has_visited(&self, (((y, x), direction), _): &(((usize, usize), D), C)) -> bool {
+        self.get((*y, *x, direction.array_index()))
             .is_some_and(|x| *x)
     }
 }

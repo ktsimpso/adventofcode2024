@@ -1,6 +1,9 @@
 use crate::libs::{
     cli::{new_cli_problem, CliProblem, Freeze},
-    graph::{BoundedPoint, CardinalDirection, Direction, PlanarCoordinate, CARDINAL_DIRECTIONS},
+    graph::{
+        dijkstras, BoundedPoint, CardinalDirection, Direction, PlanarCoordinate,
+        CARDINAL_DIRECTIONS,
+    },
     parse::{parse_table2, ParserExt, StringParse},
     problem::Problem,
 };
@@ -83,90 +86,63 @@ fn run(Day16(input): Day16, arguments: &CommandLineArguments) -> usize {
         .expect("Exists");
 
     match arguments.path_stat {
-        PathStat::ShortestWeight => find_shortest_path_weight(&start, &input).expect("Exists"),
-        PathStat::TotalSeats => find_all_shortest_paths(&start, &input).expect("Exists"),
+        PathStat::ShortestWeight => {
+            find_shortest_path_weight(&(start.y, start.x), &input).expect("Exists")
+        }
+        PathStat::TotalSeats => {
+            find_all_shortest_paths(&(start.y, start.x), &input).expect("Exists")
+        }
     }
 }
 
-fn find_all_shortest_paths(start: &BoundedPoint, maze: &Array2<Maze>) -> Option<usize> {
-    let (max_x, max_y) = BoundedPoint::maxes_from_table(maze);
+fn find_all_shortest_paths(start: &(usize, usize), maze: &Array2<Maze>) -> Option<usize> {
     let mut queue = PriorityQueue::new();
-    queue.push((CardinalDirection::Right, *start), Reverse(0));
+    queue.push((*start, CardinalDirection::Right), Reverse(0));
 
-    let mut result = None;
-    let mut visited = Array3::from_elem((max_y + 1, max_x + 1, 4), false);
+    let mut visited = Array3::from_elem((maze.dim().0, maze.dim().1, 4), false);
     let mut visited_path = Array3::from_elem(
-        (max_y + 1, max_x + 1, 4),
+        (maze.dim().0, maze.dim().1, 4),
         (
-            AHashSet::<(CardinalDirection, BoundedPoint)>::new(),
+            AHashSet::<(CardinalDirection, (usize, usize))>::new(),
             usize::MAX,
         ),
     );
 
-    while let Some(((direction, point), priority)) = queue.pop() {
-        if matches!(point.get_from_table(maze).expect("exists"), Maze::End) {
-            result = Some((priority.0, point));
-            break;
-        }
+    dijkstras(
+        queue,
+        &mut visited,
+        |_| None,
+        |((point, _), cost)| {
+            maze.get(*point)
+                .filter(|maze_type| matches!(maze_type, Maze::End))
+                .map(|_| (*cost, *point))
+        },
+        |((point, direction), _)| get_valid_moves(direction, point, maze),
+        |((point, direction), _), ((new_point, new_direction), new_cost)| {
+            let path = visited_path
+                .get_mut((new_point.0, new_point.1, new_direction.array_index()))
+                .expect("Exists");
 
-        let has_visited = visited
-            .get_mut((point.y, point.x, direction.array_index()))
-            .expect("Exists");
-        if *has_visited {
-            continue;
-        }
-
-        *has_visited = true;
-
-        get_valid_moves(&direction, &point, maze)
-            .filter(|(direction, point, _)| {
-                !visited
-                    .get((point.y, point.x, direction.array_index()))
-                    .expect("Exists")
-            })
-            .for_each(|(new_direction, new_point, score)| {
-                let current_priority = queue.get_priority(&(new_direction, new_point));
-                let new_priority = priority.0 + score;
-
-                let path = visited_path
-                    .get_mut((new_point.y, new_point.x, new_direction.array_index()))
-                    .expect("Exists");
-
-                match new_priority.cmp(&path.1) {
-                    std::cmp::Ordering::Less => {
-                        path.0.clear();
-                        path.0.insert((direction, point));
-                        path.1 = new_priority;
-                    }
-                    std::cmp::Ordering::Equal => {
-                        path.0.insert((direction, point));
-                    }
-                    std::cmp::Ordering::Greater => (),
+            match new_cost.cmp(&path.1) {
+                std::cmp::Ordering::Less => {
+                    path.0.clear();
+                    path.0.insert((*direction, *point));
+                    path.1 = *new_cost;
                 }
-
-                match current_priority {
-                    Some(current) => {
-                        if new_priority < current.0 {
-                            queue.change_priority(
-                                &(new_direction, new_point),
-                                Reverse(new_priority),
-                            );
-                        }
-                    }
-                    None => {
-                        queue.push((new_direction, new_point), Reverse(new_priority));
-                    }
-                };
-            });
-    }
-
-    result.map(|(score, end_point)| {
+                std::cmp::Ordering::Equal => {
+                    path.0.insert((*direction, *point));
+                }
+                std::cmp::Ordering::Greater => (),
+            }
+        },
+    )
+    .map(|(score, end_point)| {
         let mut on_shortest_path = AHashSet::new();
         let mut path_queue = VecDeque::new();
         on_shortest_path.insert(&end_point);
         CARDINAL_DIRECTIONS.iter().for_each(|direction| {
             let (previous_points, priority) = visited_path
-                .get((end_point.y, end_point.x, direction.array_index()))
+                .get((end_point.0, end_point.1, direction.array_index()))
                 .expect("Exists");
             if *priority == score {
                 previous_points.iter().for_each(|(direction, point)| {
@@ -178,7 +154,7 @@ fn find_all_shortest_paths(start: &BoundedPoint, maze: &Array2<Maze>) -> Option<
 
         while let Some((direction, point)) = path_queue.pop_front() {
             let (previous_points, _) = visited_path
-                .get((point.y, point.x, direction.array_index()))
+                .get((point.0, point.1, direction.array_index()))
                 .expect("Exists");
             previous_points.iter().for_each(|(direction, point)| {
                 on_shortest_path.insert(point);
@@ -190,73 +166,39 @@ fn find_all_shortest_paths(start: &BoundedPoint, maze: &Array2<Maze>) -> Option<
     })
 }
 
-fn find_shortest_path_weight(start: &BoundedPoint, maze: &Array2<Maze>) -> Option<usize> {
-    let (max_x, max_y) = BoundedPoint::maxes_from_table(maze);
+fn find_shortest_path_weight(start: &(usize, usize), maze: &Array2<Maze>) -> Option<usize> {
     let mut queue = PriorityQueue::new();
-    queue.push((CardinalDirection::Right, *start), Reverse(0));
+    queue.push((*start, CardinalDirection::Right), Reverse(0));
 
-    let mut result = None;
-    let mut visited = Array3::from_elem((max_y + 1, max_x + 1, 4), false);
+    let mut visited = Array3::from_elem((maze.dim().0, maze.dim().1, 4), false);
 
-    while let Some(((direction, point), priority)) = queue.pop() {
-        if matches!(point.get_from_table(maze).expect("exists"), Maze::End) {
-            result = Some(priority.0);
-            break;
-        }
-
-        let has_visited = visited
-            .get_mut((point.y, point.x, direction.array_index()))
-            .expect("Exists");
-        if *has_visited {
-            continue;
-        }
-
-        *has_visited = true;
-
-        get_valid_moves(&direction, &point, maze)
-            .filter(|(direction, point, _)| {
-                !visited
-                    .get((point.y, point.x, direction.array_index()))
-                    .expect("Exists")
-            })
-            .for_each(|(new_direction, new_point, score)| {
-                let current_priority = queue.get_priority(&(new_direction, new_point));
-                let new_priority = priority.0 + score;
-
-                match current_priority {
-                    Some(current) => {
-                        if new_priority < current.0 {
-                            queue.change_priority(
-                                &(new_direction, new_point),
-                                Reverse(new_priority),
-                            );
-                        }
-                    }
-                    None => {
-                        queue.push((new_direction, new_point), Reverse(new_priority));
-                    }
-                };
-            });
-    }
-
-    result
+    dijkstras(
+        queue,
+        &mut visited,
+        |_| None,
+        |((point, _), cost)| {
+            maze.get(*point)
+                .filter(|maze_type| matches!(maze_type, Maze::End))
+                .map(|_| *cost)
+        },
+        |((point, direction), _)| get_valid_moves(direction, point, maze),
+        |_, _| (),
+    )
 }
 
 fn get_valid_moves(
     direction: &CardinalDirection,
-    point: &BoundedPoint,
+    point: &(usize, usize),
     maze: &Array2<Maze>,
-) -> impl Iterator<Item = (CardinalDirection, BoundedPoint, usize)> {
+) -> impl Iterator<Item = (((usize, usize), CardinalDirection), usize)> {
     point
         .get_adjacent(*direction)
         .filter(|point| {
-            matches!(
-                point.get_from_table(maze).expect("Exists"),
-                Maze::Open | Maze::End | Maze::Start
-            )
+            maze.get(*point)
+                .is_some_and(|location| matches!(location, Maze::Open | Maze::End | Maze::Start))
         })
-        .map(|point| (*direction, point, 1))
+        .map(|point| ((point, *direction), 1))
         .into_iter()
-        .chain(once((direction.get_clockwise(), *point, 1000)))
-        .chain(once((direction.get_counter_clockwise(), *point, 1000)))
+        .chain(once(((*point, direction.get_clockwise()), 1000)))
+        .chain(once(((*point, direction.get_counter_clockwise()), 1000)))
 }
