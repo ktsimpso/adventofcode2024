@@ -1,5 +1,4 @@
 #![feature(iter_map_windows)]
-#![feature(let_chains)]
 mod days;
 mod fetch_input;
 mod libs;

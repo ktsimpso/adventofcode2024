@@ -1155,8 +1155,8 @@ pub fn dijkstras<'a, T, I, R, C, E, F, G, H>(
 ) -> Option<R>
 where
     E: FnMut(&(T, C)) -> Option<R>,
-    F: FnMut(&(T, C)) -> I,
-    I: Iterator<Item = (T, C)> + 'a,
+    F: FnMut(&(T, C)) -> I + 'a,
+    I: Iterator<Item = (T, C)>,
     G: FnMut(&(T, C), &(T, C)),
     H: FnMut(&(T, C)) -> Option<R>,
     C: Ord + Add<Output = C> + Copy,

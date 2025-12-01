@@ -38,7 +38,7 @@ dependencies = [
 
 [[package]]
 name = "adventofcode2024"
-version = "1.0.9"
+version = "1.1.0"
 dependencies = [
  "adventofcode-macro",
  "ahash",

@@ -1,11 +1,11 @@
 use crate::libs::{
-    cli::{flag_arg, new_cli_problem, single_arg, CliArgs, CliProblem, Freeze},
-    graph::{breadth_first_search, BreadthFirstSearchLifecycle, PlanarCoordinate},
-    parse::{parse_lines, parse_usize, ParserExt, StringParse},
+    cli::{CliArgs, CliProblem, Freeze, flag_arg, new_cli_problem, single_arg},
+    graph::{BreadthFirstSearchLifecycle, PlanarCoordinate, breadth_first_search},
+    parse::{ParserExt, StringParse, parse_lines, parse_usize},
     problem::{Problem, ProblemResult},
 };
 use adventofcode_macro::{problem_day, problem_parse};
-use chumsky::{error::Rich, extra, prelude::just, Parser};
+use chumsky::{Parser, error::Rich, extra, prelude::just};
 use clap::value_parser;
 use ndarray::Array2;
 use std::{collections::VecDeque, sync::LazyLock};
@@ -227,7 +227,7 @@ fn shortest_path(
 fn get_adjacent<'a>(
     point: &(usize, usize),
     data: &'a Array2<Memory>,
-) -> impl Iterator<Item = (usize, usize)> + 'a {
+) -> impl Iterator<Item = (usize, usize)> + use<'a> {
     point.into_iter_cardinal_adjacent().filter(|adjacent| {
         data.get(*adjacent)
             .is_some_and(|value| matches!(value, Memory::Safe))

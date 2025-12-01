@@ -1,10 +1,10 @@
 use crate::libs::{
-    cli::{new_cli_problem, CliProblem, Freeze},
-    parse::{parse_lines, parse_usize, ParserExt, StringParse},
+    cli::{CliProblem, Freeze, new_cli_problem},
+    parse::{ParserExt, StringParse, parse_lines, parse_usize},
     problem::Problem,
 };
 use adventofcode_macro::{problem_day, problem_parse};
-use chumsky::{error::Rich, extra, prelude::just, IterParser, Parser};
+use chumsky::{IterParser, Parser, error::Rich, extra, prelude::just};
 use clap::{Args, ValueEnum};
 use std::sync::LazyLock;
 
@@ -97,7 +97,7 @@ fn can_satisfy(test_values: &[usize], target: usize, operators: &[Operator]) -> 
                 }
             }
             Operator::Multiply => {
-                if target % *last_value != 0 {
+                if !target.is_multiple_of(*last_value) {
                     false
                 } else {
                     can_satisfy(rest, target / last_value, operators)

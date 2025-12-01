@@ -1,17 +1,17 @@
 use crate::libs::{
-    cli::{new_cli_problem, CliProblem, Freeze},
-    parse::{parse_digit, StringParse},
+    cli::{CliProblem, Freeze, new_cli_problem},
+    parse::{StringParse, parse_digit},
     problem::Problem,
 };
 use adventofcode_macro::{problem_day, problem_parse};
-use chumsky::{error::Rich, extra, prelude::end, text, IterParser, Parser};
+use chumsky::{IterParser, Parser, error::Rich, extra, prelude::end, text};
 use clap::{Args, ValueEnum};
 use priority_queue::PriorityQueue;
 use std::{
     array,
-    cmp::{min, Reverse},
+    cmp::{Reverse, min},
     hash::Hash,
-    iter::repeat,
+    iter::repeat_n,
     sync::LazyLock,
 };
 
@@ -254,15 +254,14 @@ fn compress_to_first_avilable_slot(disk: &[DiskSection]) -> usize {
         })
         .into_sorted_iter()
         .flat_map(|(block, _)| {
-            repeat(Data::Free)
-                .take(block.free_early)
+            repeat_n(Data::Free, block.free_early)
                 .chain(
                     block
                         .allocated
                         .into_iter()
-                        .flat_map(|(id, length)| repeat(Data::FileData(id)).take(length)),
+                        .flat_map(|(id, length)| repeat_n(Data::FileData(id), length)),
                 )
-                .chain(repeat(Data::Free).take(block.free))
+                .chain(repeat_n(Data::Free, block.free))
         })
         .enumerate()
         .map(|(index, id)| {

@@ -1,19 +1,19 @@
 use crate::libs::{
-    cli::{new_cli_problem, CliProblem, Freeze},
+    cli::{CliProblem, Freeze, new_cli_problem},
     graph::{
-        dijkstras, BoundedPoint, CardinalDirection, Direction, PlanarCoordinate,
-        CARDINAL_DIRECTIONS,
+        BoundedPoint, CARDINAL_DIRECTIONS, CardinalDirection, Direction, PlanarCoordinate,
+        dijkstras,
     },
-    parse::{parse_table2, ParserExt, StringParse},
+    parse::{ParserExt, StringParse, parse_table2},
     problem::Problem,
 };
-use adventofcode_macro::{problem_day, problem_parse, StringParse};
+use adventofcode_macro::{StringParse, problem_day, problem_parse};
 use ahash::AHashSet;
 use chumsky::{
+    Parser,
     error::Rich,
     extra,
     prelude::{choice, just},
-    Parser,
 };
 use clap::{Args, ValueEnum};
 use ndarray::{Array2, Array3};
@@ -190,7 +190,7 @@ fn get_valid_moves(
     direction: &CardinalDirection,
     point: &(usize, usize),
     maze: &Array2<Maze>,
-) -> impl Iterator<Item = (((usize, usize), CardinalDirection), usize)> {
+) -> impl Iterator<Item = (((usize, usize), CardinalDirection), usize)> + use<> {
     point
         .get_adjacent(*direction)
         .filter(|point| {

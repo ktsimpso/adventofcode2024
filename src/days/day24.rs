@@ -1,15 +1,16 @@
 use crate::libs::{
-    cli::{new_cli_problem, CliProblem, Freeze},
-    parse::{parse_alphanumeric, parse_lines, ParserExt, StringParse},
+    cli::{CliProblem, Freeze, new_cli_problem},
+    parse::{ParserExt, StringParse, parse_alphanumeric, parse_lines},
     problem::{Problem, ProblemResult},
 };
-use adventofcode_macro::{problem_day, problem_parse, StringParse};
+use adventofcode_macro::{StringParse, problem_day, problem_parse};
 use ahash::{AHashMap, AHashSet};
 use chumsky::{
+    IterParser, Parser,
     error::Rich,
     extra,
     prelude::{choice, just},
-    text, IterParser, Parser,
+    text,
 };
 use clap::{Args, ValueEnum};
 use itertools::Itertools;
@@ -244,7 +245,20 @@ fn find_addition_carry_and_swaps(
         .map(|gate| gate.result.clone());
 
     (
-        if final_carry.is_none() {
+        if let Some(final_carry) = final_carry {
+            if final_carry.starts_with("z") {
+                let next_z_gate = format!("z{:0>2}", i + 1);
+                if final_carry != next_z_gate {
+                    // final carry detected as wrong, final_add and final_carry must be swapped
+                    swapped_gates = Some((final_add.clone(), final_carry.clone()));
+                    return (Some(final_add), swapped_gates);
+                }
+
+                Some(final_carry)
+            } else {
+                Some(final_carry)
+            }
+        } else {
             // Final carry detected as bad
 
             if !final_add.starts_with("z") {
@@ -267,20 +281,6 @@ fn find_addition_carry_and_swaps(
                             && gate.gate_type == GateType::Or
                 })
                 .map(|gate| gate.result.clone())
-        } else {
-            let final_carry = final_carry.expect("Exists");
-            if final_carry.starts_with("z") {
-                let next_z_gate = format!("z{:0>2}", i + 1);
-                if final_carry != next_z_gate {
-                    // final carry detected as wrong, final_add and final_carry must be swapped
-                    swapped_gates = Some((final_add.clone(), final_carry.clone()));
-                    return (Some(final_add), swapped_gates);
-                }
-
-                Some(final_carry)
-            } else {
-                Some(final_carry)
-            }
         },
         swapped_gates,
     )

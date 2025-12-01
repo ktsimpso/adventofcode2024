@@ -1,15 +1,16 @@
 use crate::libs::{
-    cli::{new_cli_problem, CliProblem, Freeze},
+    cli::{CliProblem, Freeze, new_cli_problem},
     graph::{CardinalDirection, Direction, PlanarCoordinate},
-    parse::{parse_lines, parse_table2, ParserExt, StringParse},
+    parse::{ParserExt, StringParse, parse_lines, parse_table2},
     problem::Problem,
 };
-use adventofcode_macro::{problem_day, problem_parse, StringParse};
+use adventofcode_macro::{StringParse, problem_day, problem_parse};
 use chumsky::{
+    IterParser, Parser,
     error::Rich,
     extra,
     prelude::{choice, just},
-    text, IterParser, Parser,
+    text,
 };
 use clap::Args;
 use itertools::Itertools;
@@ -196,7 +197,7 @@ fn move_direction_wide(
 
                 let mut box_locations = vec![adjacent, companion];
                 let mut finish_locations = Vec::new();
-                let result = loop {
+                loop {
                     let adjacent_locations = box_locations
                         .into_iter()
                         .filter_map(|box_| {
@@ -253,9 +254,7 @@ fn move_direction_wide(
                         })
                         .unique()
                         .collect()
-                };
-
-                result
+                }
             }
             _ => adjacent
                 .into_iter_direction(direction)
